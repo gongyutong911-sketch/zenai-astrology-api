@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenAI · 八字能量指南</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Serif+SC:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ["Cinzel", "Noto Serif SC", "serif"],
+            serifcn: ["Noto Serif SC", "serif"],
+            mono: ["Share Tech Mono", "ui-monospace", "monospace"],
+          },
+          colors: {
+            void: "#07060d",
+            gold: "#e8c872",
+            mist: "#9ae6ff",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.28), transparent 55%),
+        radial-gradient(900px 500px at 110% 10%, rgba(14, 165, 233, 0.18), transparent 50%),
+        linear-gradient(180deg, #07060d 0%, #0c0a14 45%, #05040a 100%);
+    }
+    body::before {
+      content: "";
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232, 200, 114, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(154, 230, 255, 0.05) 1px, transparent 1px);
+      background-size: 56px 56px;
+      opacity: 0.35;
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
+    .glow-card {
+      box-shadow:
+        0 0 0 1px rgba(232, 200, 114, 0.18),
+        0 20px 60px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-zinc-100 font-serifcn">
+  <div class="max-w-5xl mx-auto px-4 py-10 md:py-16">
+    <header class="text-center mb-10">
+      <p class="font-mono text-xs tracking-[0.4em] text-mist/80 uppercase">Lunar Protocol // EightChar Engine</p>
+      <h1 class="mt-3 font-display text-4xl md:text-6xl text-gold tracking-widest">ZENAI 命盘</h1>
+      <p class="mt-4 text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+        输入公历生辰，计算四柱干支，生成守护能量指南。不谈宿命，只映射你的核心频率。
+      </p>
+    </header>
+
+    <section class="glow-card rounded-3xl bg-black/40 backdrop-blur-md p-6 md:p-8">
+      <form id="bazi-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <label class="block">
+          <span class="block text-xs tracking-widest text-gold/80 mb-2">YEAR 年</span>
+          <input name="year" type="number" min="1900" max="2100" required value="1995"
+            class="w-full rounded-xl bg-zinc-950/70 border border-gold/20 px-3 py-3 outline-none focus:border-mist" />
+        </label>
+        <label class="block">
+          <span class="block text-xs tracking-widest text-gold/80 mb-2">MONTH 月</span>
+          <input name="month" type="number" min="1" max="12" required value="10"
+            class="w-full rounded-xl bg-zinc-950/70 border border-gold/20 px-3 py-3 outline-none focus:border-mist" />
+        </label>
+        <label class="block">
+          <span class="block text-xs tracking-widest text-gold/80 mb-2">DAY 日</span>
+          <input name="day" type="number" min="1" max="31" required value="20"
+            class="w-full rounded-xl bg-zinc-950/70 border border-gold/20 px-3 py-3 outline-none focus:border-mist" />
+        </label>
+        <label class="block">
+          <span class="block text-xs tracking-widest text-gold/80 mb-2">HOUR 时</span>
+          <input name="hour" type="number" min="0" max="23" required value="14"
+            class="w-full rounded-xl bg-zinc-950/70 border border-gold/20 px-3 py-3 outline-none focus:border-mist" />
+        </label>
+        <label class="block">
+          <span class="block text-xs tracking-widest text-gold/80 mb-2">GENDER 性别</span>
+          <select name="gender"
+            class="w-full rounded-xl bg-zinc-950/70 border border-gold/20 px-3 py-3 outline-none focus:border-mist">
+            <option value="1">乾造 · 男</option>
+            <option value="0">坤造 · 女</option>
+          </select>
+        </label>
+        <div class="md:col-span-5 flex justify-center pt-2">
+          <button type="submit" id="submit-btn"
+            class="px-10 py-3 rounded-full bg-gradient-to-r from-violet-700 via-fuchsia-700 to-amber-600 text-white tracking-[0.3em] uppercase shadow-lg shadow-violet-900/40 hover:opacity-90 transition">
+            推演能量
+          </button>
+        </div>
+      </form>
+      <p id="error" class="hidden mt-4 text-center text-rose-300 text-sm"></p>
+    </section>
+
+    <section id="result" class="hidden mt-8 space-y-6">
+      <div class="glow-card rounded-3xl bg-black/35 p-6 md:p-8">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p class="font-mono text-xs text-mist/70 tracking-[0.3em]">FOUR PILLARS</p>
+            <h2 id="guide-title" class="text-2xl md:text-3xl text-gold mt-1"></h2>
+          </div>
+          <div class="text-right text-sm text-zinc-400">
+            <p id="meta-solar"></p>
+            <p id="meta-lunar"></p>
+            <p id="meta-gender"></p>
+          </div>
+        </div>
+        <div id="pillars" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <article class="glow-card rounded-3xl bg-black/35 p-6">
+          <h3 class="text-gold tracking-widest text-sm">核心本质</h3>
+          <p id="guide-essence" class="mt-3 text-zinc-300 leading-8"></p>
+        </article>
+        <article class="glow-card rounded-3xl bg-black/35 p-6">
+          <h3 class="text-gold tracking-widest text-sm">事业财流</h3>
+          <p id="guide-career" class="mt-3 text-zinc-300 leading-8"></p>
+        </article>
+        <article class="glow-card rounded-3xl bg-black/35 p-6">
+          <h3 class="text-gold tracking-widest text-sm">情感共振</h3>
+          <p id="guide-relationship" class="mt-3 text-zinc-300 leading-8"></p>
+        </article>
+        <article class="glow-card rounded-3xl bg-black/35 p-6">
+          <h3 class="text-gold tracking-widest text-sm">周期建议</h3>
+          <p id="guide-advice" class="mt-3 text-zinc-300 leading-8"></p>
+        </article>
+      </div>
+
+      <div class="glow-card rounded-3xl bg-black/35 p-6 md:p-8">
+        <p class="font-mono text-xs text-mist/70 tracking-[0.3em]">RESONANCE KEYS</p>
+        <div class="mt-4 flex flex-wrap gap-2" id="lucky-tags"></div>
+        <p class="mt-6 text-sm text-zinc-400">大运流程</p>
+        <p id="da-yun" class="mt-2 font-mono text-gold/90 text-sm md:text-base"></p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const form = document.getElementById("bazi-form");
+    const result = document.getElementById("result");
+    const errorBox = document.getElementById("error");
+    const submitBtn = document.getElementById("submit-btn");
+
+    function pillarCard(pillar) {
+      return `
+        <div class="rounded-2xl border border-gold/15 bg-zinc-950/60 p-4 text-center">
+          <p class="text-[11px] tracking-[0.25em] text-mist/70">${pillar.label}</p>
+          <p class="mt-2 text-3xl text-gold font-display">${pillar.gan_zhi}</p>
+          <p class="mt-2 text-xs text-zinc-400">${pillar.shi_shen} · ${pillar.na_yin}</p>
+          <p class="mt-1 text-[11px] text-zinc-500">${pillar.wu_xing} · ${pillar.shi_shen_en}</p>
+        </div>
+      `;
+    }
+
+    function tag(text) {
+      return `<span class="px-3 py-1 rounded-full border border-mist/30 text-mist text-xs tracking-widest">${text}</span>`;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorBox.classList.add("hidden");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "演算中...";
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      const payload = {
+        year: Number(data.year),
+        month: Number(data.month),
+        day: Number(data.day),
+        hour: Number(data.hour),
+        gender: Number(data.gender),
+      };
+
+      try {
+        const response = await fetch("/generate_guardian_guidance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const json = await response.json();
+        if (!response.ok) {
+          throw new Error(json.detail || "推演失败");
+        }
+
+        const chart = json.bazi;
+        const guide = json.guidance;
+        document.getElementById("guide-title").textContent = `${guide.title}  ·  ${chart.day_master}`;
+        document.getElementById("meta-solar").textContent = `公历 ${chart.solar}`;
+        document.getElementById("meta-lunar").textContent = `农历 ${chart.lunar}`;
+        document.getElementById("meta-gender").textContent = chart.gender_label;
+        document.getElementById("pillars").innerHTML = ["year", "month", "day", "hour"]
+          .map((key) => pillarCard(chart.pillars[key]))
+          .join("");
+        document.getElementById("guide-essence").textContent = guide.essence;
+        document.getElementById("guide-career").textContent = guide.career;
+        document.getElementById("guide-relationship").textContent = guide.relationship;
+        document.getElementById("guide-advice").textContent = guide.advice;
+        document.getElementById("lucky-tags").innerHTML = [
+          ...guide.lucky_colors.map((item) => tag("色 " + item)),
+          ...guide.lucky_directions.map((item) => tag("向 " + item)),
+          ...guide.support_elements.map((item) => tag("行 " + item)),
+        ].join("");
+        document.getElementById("da-yun").textContent = (chart.da_yun || [])
+          .map((item) => `${item.start_age}岁 ${item.gan_zhi}`)
+          .join("  →  ") || chart.life_cycles;
+        result.classList.remove("hidden");
+        result.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (err) {
+        errorBox.textContent = err.message || "网络异常，请稍后重试";
+        errorBox.classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "推演能量";
+      }
+    });
+  </script>
+</body>
+</html>
