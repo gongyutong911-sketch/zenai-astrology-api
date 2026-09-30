@@ -2,12 +2,16 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import os
 
-# 导入你的八字计算逻辑
-from bazi import calculate_bazi
-
 app = FastAPI(title="ZenAI 八字能量指南")
 
-# 1. 根路径挂载：访问首页 / 时返回 index.html
+# 尝试导入八字计算逻辑，如果导入失败不影响首页加载
+try:
+    from bazi import calculate_bazi
+except Exception as e:
+    def calculate_bazi(data):
+        return {"error": f"Bazi calculation module error: {str(e)}"}
+
+# 1. 首页直接读取并返回 index.html
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
     if os.path.exists("index.html"):
@@ -15,7 +19,7 @@ async def read_index():
             return f.read()
     return "<h1>index.html 文件未找到</h1>"
 
-# 2. 八字计算 API 接口
+# 2. API 接口
 @app.post("/api/bazi")
 async def bazi_endpoint(data: dict):
     result = calculate_bazi(data)
