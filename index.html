@@ -1,240 +1,234 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZENAI 命盘 // 八字能量指南</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: #0d0d11;
-            color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 650px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        .header-title {
-            font-size: 0.8rem;
-            letter-spacing: 3px;
-            color: #8a8a93;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-        h1 {
-            font-size: 2.2rem;
-            color: #f3e5ab;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            font-size: 0.85rem;
-            color: #a0a0ab;
-            margin-bottom: 30px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr) 1.2fr;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            text-align: left;
-        }
-        .input-group label {
-            font-size: 0.7rem;
-            color: #8a8a93;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            padding: 10px;
-            color: #fff;
-            font-size: 0.9rem;
-            outline: none;
-            text-align: center;
-        }
-        input:focus, select:focus {
-            border-color: #9d4edd;
-        }
-        button {
-            background: linear-gradient(135deg, #7b2cbf, #9d4edd);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 12px 35px;
-            font-size: 0.95rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
-            margin-top: 10px;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(157, 78, 221, 0.6);
-        }
-        .result-card {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            display: none;
-            text-align: left;
-        }
-        .bazi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .bazi-item {
-            background: rgba(157, 78, 221, 0.1);
-            border: 1px solid rgba(157, 78, 221, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .bazi-item .label { font-size: 0.75rem; color: #a0a0ab; }
-        .bazi-item .val { font-size: 1.2rem; font-weight: bold; color: #f3e5ab; margin-top: 4px; }
-        .guide-box {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
-            margin-top: 15px;
-        }
-        .guide-title { font-size: 1.1rem; color: #f3e5ab; font-weight: bold; margin-bottom: 8px; }
-        .guide-content { font-size: 0.9rem; color: #cccccc; line-height: 1.6; margin-bottom: 8px; }
-        .error-msg { color: #ff6b6b; font-size: 0.85rem; margin-top: 15px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZENAI 命盘 // 八字能量指南</title>
+
+  <!-- 引入 marked.js 库解析 Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0d0d11;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: #16161e;
+      border: 1px solid #2a2a3c;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 650px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    h1 {
+      color: #9d7cd8;
+      font-size: 24px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    p.subtitle {
+      color: #787c99;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .form-group.full-width {
+      grid-template-columns: 1fr;
+    }
+    label {
+      font-size: 12px;
+      color: #7aa5f7;
+      margin-bottom: 4px;
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #1a1b26;
+      border: 1px solid #2f334d;
+      border-radius: 6px;
+      color: #c0caf5;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #7aa5f7;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7aa5f7 0%, #9d7cd8 100%);
+      border: none;
+      border-radius: 6px;
+      color: #15161e;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button:disabled {
+      background: #414868;
+      cursor: not-allowed;
+    }
+
+    /* Markdown 结果区域样式 */
+    #result-container {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #2f334d;
+      line-height: 1.6;
+      font-size: 15px;
+      color: #c0caf5;
+    }
+    #result-container h1, #result-container h2, #result-container h3 {
+      color: #bb9af7;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    #result-container h2 {
+      font-size: 18px;
+      border-bottom: 1px dashed #2f334d;
+      padding-bottom: 4px;
+    }
+    #result-container h3 {
+      font-size: 16px;
+    }
+    #result-container p {
+      margin-bottom: 12px;
+    }
+    #result-container ul, #result-container ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+    #result-container li {
+      margin-bottom: 4px;
+    }
+    #result-container strong {
+      color: #7aa5f7;
+    }
+    .loading {
+      text-align: center;
+      color: #e0af68;
+      font-style: italic;
+    }
+    .error {
+      color: #f7768e;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-title">LUNAR PROTOCOL // EIGHTCHAR ENGINE</div>
-    <h1>ZENAI 命盘</h1>
-    <p class="subtitle">输入公历生辰，计算四柱干支，生成守护能量指南。</p >
+  <div class="container">
+    <h1>ZENAI 命盘指南</h1>
+    <p class="subtitle">输入生辰八字，获取 AI 深度运势能量解析</p >
 
-    <div class="form-grid">
-        <div class="input-group">
-            <label>YEAR 年</label>
-            <input type="number" id="year" value="1995" min="1900" max="2100">
+    <form id="bazi-form">
+      <div class="form-group">
+        <div>
+          <label>出生年份 (公历)</label>
+          <input type="number" id="year" placeholder="1995" required value="1995">
         </div>
-        <div class="input-group">
-            <label>MONTH 月</label>
-            <input type="number" id="month" value="10" min="1" max="12">
+        <div>
+          <label>出生月份</label>
+          <input type="number" id="month" min="1" max="12" placeholder="8" required value="8">
         </div>
-        <div class="input-group">
-            <label>DAY 日</label>
-            <input type="number" id="day" value="20" min="1" max="31">
-        </div>
-        <div class="input-group">
-            <label>HOUR 时</label>
-            <input type="number" id="hour" value="14" min="0" max="23">
-        </div>
-        <div class="input-group">
-            <label>GENDER 性别</label>
-            <select id="gender">
-                <option value="male">乾造 · 男</option>
-                <option value="female">坤造 · 女</option>
-            </select>
-        </div>
-    </div>
+      </div>
 
-    <button id="calc-btn" onclick="calculateBazi()">推演能量</button>
-    <div id="error-output" class="error-msg"></div>
-
-    <div id="result-card" class="result-card">
-        <div class="bazi-grid">
-            <div class="bazi-item"><div class="label">年柱</div><div class="val" id="bz-year">-</div></div>
-            <div class="bazi-item"><div class="label">月柱</div><div class="val" id="bz-month">-</div></div>
-            <div class="bazi-item"><div class="label">日柱</div><div class="val" id="bz-day">-</div></div>
-            <div class="bazi-item"><div class="label">时柱</div><div class="val" id="bz-hour">-</div></div>
+      <div class="form-group">
+        <div>
+          <label>出生日期</label>
+          <input type="number" id="day" min="1" max="31" placeholder="18" required value="18">
         </div>
-        <div class="guide-box">
-            <div class="guide-title" id="guide-title">守护指南</div>
-            <div class="guide-content" id="guide-core">能量分析计算中...</div>
-            <div class="guide-content" style="color: #9d4edd;" id="guide-advice"></div>
+        <div>
+          <label>出生小时 (0-23)</label>
+          <input type="number" id="hour" min="0" max="23" placeholder="14" required value="14">
         </div>
-    </div>
-</div>
+      </div>
 
-<script>
-async function calculateBazi() {
-    const errorDiv = document.getElementById('error-output');
-    const resultCard = document.getElementById('result-card');
-    const btn = document.getElementById('calc-btn');
+      <div class="form-group full-width">
+        <div>
+          <label>性别</label>
+          <select id="gender">
+            <option value="male">男 (乾造)</option>
+            <option value="female">女 (坤造)</option>
+          </select>
+        </div>
+      </div>
 
-    errorDiv.innerText = '';
-    btn.innerText = '推演中...';
+      <button type="submit" id="submit-btn">生成八字守护指南</button>
+    </form>
 
-    const payload = {
-        year: parseInt(document.getElementById('year').value) || 1995,
-        month: parseInt(document.getElementById('month').value) || 10,
-        day: parseInt(document.getElementById('day').value) || 20,
-        hour: parseInt(document.getElementById('hour').value) || 14
-    };
+    <div id="result-container" style="display: none;"></div>
+  </div>
 
-    try {
-        const response = await fetch('/generate_guardian_guidance', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+  <script>
+    const form = document.getElementById('bazi-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultContainer = document.getElementById('result-container');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // 禁用按钮并显示加载中状态
+      submitBtn.disabled = true;
+      submitBtn.innerText = "AI 正在解盘推算中...";
+      resultContainer.style.display = 'block';
+      resultContainer.className = 'loading';
+      resultContainer.innerText = "🔮 正在排盘并调用 AI 模型生成指南，请稍候...";
+
+      const payload = {
+        year: parseInt(document.getElementById('year').value),
+        month: parseInt(document.getElementById('month').value),
+        day: parseInt(document.getElementById('day').value),
+        hour: parseInt(document.getElementById('hour').value),
+        gender: document.getElementById('gender').value
+      };
+
+      try {
+        const response = await fetch('/api/bazi/guidance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP Error Status: ${response.status}`);
-        }
 
         const data = await response.json();
 
-        // 核心安全容错：防止后端没有返回 guide 对象导致前端报错
-        const bazi = data.bazi || { year: '甲子', month: '丙寅', day: '戊辰', time: '壬戌' };
-        const dayGan = data.day_gan || '日主';
-        
-        const guide = data.guide || {
-            title: `日主【${dayGan}】能量守护指南`,
-            core_energy: `核心五行属性：${data.wuxing || '天地之气'}。`,
-            advice: "保持心境平和，凝聚专注力，顺应自然节律。"
-        };
-
-        // 赋值 DOM 节点
-        document.getElementById('bz-year').innerText = bazi.year || '-';
-        document.getElementById('bz-month').innerText = bazi.month || '-';
-        document.getElementById('bz-day').innerText = bazi.day || '-';
-        document.getElementById('bz-hour').innerText = bazi.time || bazi.hour || '-';
-
-        document.getElementById('guide-title').innerText = guide.title || '能量守护指南';
-        document.getElementById('guide-core').innerText = guide.core_energy || '';
-        document.getElementById('guide-advice').innerText = guide.advice || '';
-
-        resultCard.style.display = 'block';
-    } catch (err) {
-        console.error(err);
-        errorDiv.innerText = `计算提示: ${err.message || err}`;
-    } finally {
-        btn.innerText = '推演能量';
-    }
-}
-</script>
-
+        if (response.ok) {
+          resultContainer.className = '';
+          const rawText = data.guidance || data.message || "未能生成有效运势内容。";
+          // 使用 marked.parse 将 Markdown 字符串渲染成 HTML
+          resultContainer.innerHTML = marked.parse(rawText);
+        } else {
+          resultContainer.className = 'error';
+          resultContainer.innerText = `错误: ${data.detail || '请求服务失败'}`;
+        }
+      } catch (err) {
+        resultContainer.className = 'error';
+        resultContainer.innerText = `网络异常: ${err.message}`;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "生成八字守护指南";
+      }
+    });
+  </script>
 </body>
 </html>
