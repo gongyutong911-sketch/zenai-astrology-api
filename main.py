@@ -56,8 +56,7 @@ async def generate_guidance(req: BaziRequest):
 3. 字数要求在 600 - 1000 字左右，语气客观、禅意且富有正能量。
 """
 
-        # 调用 LLM 生成运势
-        # 调用 LLM 生成运势
+        # 调用 LLM 生成运势（已修正语法结构）
         response = client.chat.completions.create(
             model=os.environ.get("MODEL_NAME", "gpt-4o-mini"),
             messages=[
@@ -66,3 +65,14 @@ async def generate_guidance(req: BaziRequest):
             ],
             temperature=0.7
         )
+
+        guidance_content = response.choices[0].message.content
+
+        return {
+            "success": True,
+            "bazi": bazi_str,
+            "guidance": guidance_content
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
