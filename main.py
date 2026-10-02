@@ -32,11 +32,12 @@ def read_root():
 def get_bazi_guidance(req: BaziRequest):
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="API Key is not configured on server.")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured on Render environment.")
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # 使用标准的 gemini-2.5-flash 或 gemini-1.5-flash
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
         prompt = f"用户公历出生日期：{req.year}年{req.month}月{req.day}日 {req.hour}时，性别：{req.gender}。请给出今日五行能量分析与行动建议。"
         response = model.generate_content(prompt)
