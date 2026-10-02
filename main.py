@@ -36,8 +36,8 @@ def get_bazi_guidance(req: BaziRequest):
 
     try:
         genai.configure(api_key=api_key)
-        # 使用标准的 gemini-2.5-flash 或 gemini-1.5-flash
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        # 根据官方 API 报错提示更新为 gemini-3.8-flash
+        model = genai.GenerativeModel("gemini-3.8-flash")
         
         prompt = f"用户公历出生日期：{req.year}年{req.month}月{req.day}日 {req.hour}时，性别：{req.gender}。请给出今日五行能量分析与行动建议。"
         response = model.generate_content(prompt)
