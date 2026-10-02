@@ -1,78 +1,79 @@
 import os
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from lunar_python import Lunar
 from openai import OpenAI
+from dotenv import load_dotenv
 
-app = FastAPI(title="ZENAI Astrology API")
+# 加载本地 .env 环境变量
+load_dotenv()
 
-# 初始化 OpenAI 客户端（自动读取环境变量中的 OPENAI_API_KEY）
-client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
-    base_url=os.environ.get("OPENAI_BASE_URL")  # 如果使用 DeepSeek 等兼容服务可配置此环境变量
+app = FastAPI(
+    title="ZenAI Astrology & Energy API",
+    description="基于中国传统八字与现代心理学的每日能量指导 API",
+    version="1.0.0"
 )
 
-# 1. 根路由：直接返回 index.html 前端页面
-@app.get("/")
-async def read_index():
-    if os.path.exists("index.html"):
-        return FileResponse("index.html")
-    return {"message": "index.html not found"}
+# ------------------------------------------------------------------
+# 1. 配置 CORS 跨域中间件（解决 TypeError: Load failed / 跨域拦截问题）
+# ------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # 允许所有前端域名访问（生产环境可限定为指定域名）
+    allow_credentials=True,     # 允许携带 Cookie / 认证头
+    allow_methods=["*"],        # 允许所有 HTTP 方法 (GET, POST, OPTIONS 等)
+    allow_headers=["*"],        # 允许所有请求头
+)
 
-# 请求体数据结构
+# ------------------------------------------------------------------
+# 2. 初始化 OpenAI 客户端（兼容 Gemini API Endpoint）
+# ------------------------------------------------------------------
+api_key = os.getenv("OPENAI_API_KEY")
+base_url = os.getenv("OPENAI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+
+if not api_key:
+    raise ValueError("未检测到 OPENAI_API_KEY 环境变量，请在 Render 或 .env 中进行配置。")
+
+client = OpenAI(
+    api_key=api_key,
+    base_url=base_url
+)
+
+# ------------------------------------------------------------------
+# 3. 定义请求参数模型 (Pydantic Schema)
+# ------------------------------------------------------------------
 class BaziRequest(BaseModel):
     year: int
     month: int
     day: int
     hour: int
-    gender: str = "male"
+    gender: str  # "male" 或 "female"
 
-# 2. 八字与运势生成接口
+# ------------------------------------------------------------------
+# 4. API 路由定义
+# ------------------------------------------------------------------
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "ZenAI Astrology API is running smoothly."}
+
 @app.post("/api/bazi/guidance")
-async def generate_guidance(req: BaziRequest):
+def get_bazi_guidance(req: BaziRequest):
     try:
-        # 使用 lunar-python 进行阴历与八字排盘
-        lunar = Lunar.fromYmdHms(req.year, req.month, req.day, req.hour, 0, 0)
-        eight_char = lunar.getEightChar()
-        
-        bazi_str = f"{eight_char.getYear()}年 {eight_char.getMonth()}月 {eight_char.getDay()}日 {eight_char.getTime()}时"
-        gender_str = "乾造 (男)" if req.gender == "male" else "坤造 (女)"
+        # TODO: 替换为你的八字计算逻辑/Prompt 组装
+        # 这里模拟提取到的八字与系统 Prompt
+        prompt = f"用户公历出生日期：{req.year}年{req.month}月{req.day}日 {req.hour}时，性别：{req.gender}。请给出今日五行能量与行动建议。"
 
-        prompt = f"""
-你是一位深谙东方哲理与八字能量的禅意导师。
-请根据以下生辰八字排盘信息，为用户生成一份充满启发性、温暖且极具深度的八字能量守护指南。
-
-【排盘信息】
-- 生辰八字：{bazi_str}
-- 性别：{gender_str}
-
-【生成要求】
-1. 使用 Markdown 格式输出，包含清晰的标题（##）、重点加粗与段落排版。
-2. 内容包含三个核心板块：
-   - ## 1. 命盘五行能量特质
-   - ## 2. 当前阶段机缘与挑战
-   - ## 3. ZENAI 专属能量守护建议
-3. 字数要求在 600 - 1000 字左右，语气客观、禅意且富有正能量。
-"""
-
-        # 调用 LLM 生成运势（已修正语法结构）
         response = client.chat.completions.create(
-            model=os.environ.get("MODEL_NAME", "gpt-4o-mini"),
+            model="gemini-1.5-flash",  # 或 "gemini-1.5-pro" / "gpt-3.5-turbo"
             messages=[
-                {"role": "system", "content": "你是一位专业的东方智慧与八字运势解读导师。"},
+                {"role": "system", "content": "你是一位精通中国传统八字命理与现代心理学、能量指导的专家。请提供温暖、客观、具建设性的每日能量指引。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7
         )
 
-        guidance_content = response.choices[0].message.content
-
-        return {
-            "success": True,
-            "bazi": bazi_str,
-            "guidance": guidance_content
-        }
+        guidance_text = response.choices[0].message.content
+        return {"success": True, "guidance": guidance_text}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
