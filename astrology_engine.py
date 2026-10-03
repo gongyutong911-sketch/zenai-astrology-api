@@ -29,4 +29,4 @@ def get_astrology_energy_guidance(birth_date: str, birth_time: str = "12:00", ge
         
     except Exception as e:
         # 如果 API 调用失败，返回友好的降级提示或错误信息
-        return f"【能量指引生成提示】生日: {birth_date} {birth_time}，问题: {question。当前 AI 模块返回异常: {str(e)}"
+        return f"【能量指引生成提示】生日: {birth_date} {birth_time}，问题: {question}. 当前 AI 模块返回异常: {str(e)}"
