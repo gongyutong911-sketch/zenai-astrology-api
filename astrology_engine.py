@@ -1,35 +1,32 @@
-# -*- coding: utf-8 -*-
-from datetime import datetime
-from lunar_python import Solar, Lunar
+import os
+import google.generativeai as genai
 
-def get_bazi_profile(year: int, month: int, day: int, hour: int):
+# 配置 Gemini API 密钥
+GEMINI_API_KEY = os.getenv("OPENAI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+def get_astrology_energy_guidance(birth_date: str, birth_time: str = "12:00", gender: str = "female", question: str = "今日能量指引"):
     """
-    根据公历年月日时计算八字命盘及今日干支能量
+    核心能量命理计算与 Gemini AI 指引生成函数
     """
-    # 1. 构造用户出生公历对象
-    solar = Solar.fromYmdHms(year, month, day, hour, 0, 0)
-    
-    # 2. 转为农历/八字对象 (已修复 AttributeError)
-    lunar = solar.getLunar()
-    
-    # 获取八字四柱
-    bazi = lunar.getEightChar()
-    bazi_str = f"{bazi.getYear()}年 {bazi.getMonth()}月 {bazi.getDay()}日 {bazi.getTime()}时"
-    
-    # 日主（日干）
-    day_master = bazi.getDayGan()
-    
-    # 3. 获取今日阳历与干支信息
-    now = datetime.now()
-    today_solar = Solar.fromYmdHms(now.year, now.month, now.day, now.hour, now.minute, now.second)
-    today_lunar = today_solar.getLunar()
-    today_ganzhi = f"{today_lunar.getYearInGanZhi()}年 {today_lunar.getMonthInGanZhi()}月 {today_lunar.getDayInGanZhi()}日"
-    
-    return {
-        "solar_date": f"{year}-{month:02d}-{day:02d} {hour:02d}:00",
-        "lunar_date": f"{lunar.getYearInChinese()}年 {lunar.getMonthInChinese()}月{lunar.getDayInChinese()}",
-        "bazi_str": bazi_str,
-        "day_master": day_master,
-        "today_solar": now.strftime("%Y-%m-%d"),
-        "today_ganzhi": today_ganzhi
-    }
+    try:
+        # 使用配置好的 Gemini 模型生成能量指引
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        prompt = f"""
+        你是一位专业的能量命理导师。请根据以下用户信息提供一份详细的能量指引报告：
+        - 出生日期: {birth_date}
+        - 出生时间: {birth_time}
+        - 性别: {gender}
+        - 咨询问题/主题: {question}
+        
+        请从今日能量场、运势走向以及实用建议三个方面进行深度解析，语言温暖、富有洞察力。
+        """
+        
+        response = model.generate_content(prompt)
+        return response.text
+        
+    except Exception as e:
+        # 如果 API 调用失败，返回友好的降级提示或错误信息
+        return f"【能量指引生成提示】生日: {birth_date} {birth_time}，问题: {question。当前 AI 模块返回异常: {str(e)}"
