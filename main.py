@@ -1,52 +1,42 @@
 import os
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
-from dotenv import load_dotenv
+from astrology_engine import get_astrology_energy_guidance  # 确保导入你的核心引擎模块
 
-load_dotenv()
-
-app = FastAPI(title="ZenAI Astrology API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# 初始化 FastAPI 应用
+app = FastAPI(
+    title="ZenAI Astrology & Energy API",
+    description="An AI-powered astrology and energy guidance API using Google Gemini.",
+    version="1.0.0"
 )
 
-class BaziRequest(BaseModel):
-    year: int
-    month: int
-    day: int
-    hour: int
-    gender: str
+# 配置 Gemini API 密钥（优先从环境变量读取）
+GEMINI_API_KEY = os.getenv("OPENAI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# 定义请求体数据结构
+class EnergyRequest(BaseModel):
+    birth_date: str
+    birth_time: str = "12:00"
+    gender: str = "female"
+    question: str = "今日能量指引"
 
 @app.get("/")
 def read_root():
-    return {"status": "online"}
+    return {"status": "ok", "message": "ZenAI Astrology & Energy API is running smoothly!"}
 
-@app.post("/api/bazi/guidance")
-def get_bazi_guidance(req: BaziRequest):
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured on Render environment.")
-
+@app.post("/api/energy-guidance")
+def generate_energy_guidance(request: EnergyRequest):
     try:
-        genai.configure(api_key=api_key)
-        # 根据官方 API 报错提示更新为 gemini-3.8-flash
-        model = genai.GenerativeModel("gemini-3.8-flash")
-        
-        prompt = f"用户公历出生日期：{req.year}年{req.month}月{req.day}日 {req.hour}时，性别：{req.gender}。请给出今日五行能量分析与行动建议。"
-        response = model.generate_content(prompt)
-
-        return {
-            "success": True,
-            "data": {
-                "guidance": response.text
-            }
-        }
+        # 调用 astrology_engine.py 中的核心计算与 AI 生成函数
+        result = get_astrology_energy_guidance(
+            birth_date=request.birth_date,
+            birth_time=request.birth_time,
+            gender=request.gender,
+            question=request.question
+        )
+        return {"status": "success", "data": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
