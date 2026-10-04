@@ -1,20 +1,18 @@
 import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import google.generativeai as genai
-from astrology_engine import get_astrology_energy_guidance  # 确保导入你的核心引擎模块
+from astrology_engine import get_astrology_energy_guidance
 
 # 初始化 FastAPI 应用
 app = FastAPI(
     title="ZenAI Astrology & Energy API",
-    description="An AI-powered astrology and energy guidance API using Google Gemini.",
+    description="An AI-powered astrology and energy guidance API.",
     version="1.0.0"
 )
 
-# 配置 Gemini API 密钥（优先从环境变量读取）
-GEMINI_API_KEY = os.getenv("OPENAI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "ZenAI Astrology & Energy API is running smoothly!"}
 
 # 定义请求体数据结构
 class EnergyRequest(BaseModel):
@@ -22,10 +20,6 @@ class EnergyRequest(BaseModel):
     birth_time: str = "12:00"
     gender: str = "female"
     question: str = "今日能量指引"
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "ZenAI Astrology & Energy API is running smoothly!"}
 
 @app.post("/api/energy-guidance")
 def generate_energy_guidance(request: EnergyRequest):
