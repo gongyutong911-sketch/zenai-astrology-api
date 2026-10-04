@@ -1,4 +1,8 @@
-from fastapi import FastAPI, HTTPException
+import os
+import secrets
+from typing import Optional
+
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from astrology_engine import get_astrology_energy_guidance
 
@@ -31,8 +35,22 @@ class EnergyResponse(BaseModel):
     data: EnergyGuidance
 
 
+def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
+    """未配置 API_SECRET_KEY 时放行；已配置时要求 X-API-Key 完全匹配。"""
+    expected = os.getenv("API_SECRET_KEY", "").strip()
+    if not expected:
+        return
+    provided = (x_api_key or "").encode("utf-8")
+    secret = expected.encode("utf-8")
+    if len(provided) != len(secret) or not secrets.compare_digest(provided, secret):
+        raise HTTPException(status_code=401, detail="未授权")
+
+
 @app.post("/api/energy-guidance", response_model=EnergyResponse)
-def generate_energy_guidance(request: EnergyRequest):
+def generate_energy_guidance(
+    request: EnergyRequest,
+    _: None = Depends(require_api_key),
+):
     try:
         # 调用 astrology_engine.py 中的核心计算与 AI 生成函数
         result = get_astrology_energy_guidance(
