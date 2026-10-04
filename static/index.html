@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>能量指引</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3efe6;
+      --ink: #1d1a16;
+      --muted: #6d645b;
+      --line: #e3d9cc;
+      --card: #fffdf8;
+      --accent: #8d3d32;
+      --accent-dark: #6e2d25;
+      --danger-bg: #f8e8e4;
+      --danger: #8a2e24;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(141, 61, 50, 0.08), transparent 32rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+    }
+
+    main {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header { margin-bottom: 28px; }
+
+    h1 {
+      margin: 0 0 8px;
+      font-family: "Iowan Old Style", Palatino, "Palatino Linotype", "Songti SC", serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+
+    header p {
+      margin: 0;
+      max-width: 38rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    form, .results {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    label.wide { grid-column: 1 / -1; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      padding: 10px 12px;
+    }
+
+    textarea { min-height: 110px; resize: vertical; }
+
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid rgba(141, 61, 50, 0.28);
+      border-color: var(--accent);
+    }
+
+    button {
+      margin-top: 16px;
+      width: 100%;
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fffaf6;
+      font: inherit;
+      font-weight: 600;
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--accent-dark); }
+    button:disabled { cursor: wait; opacity: 0.7; }
+
+    .results h2 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .empty, .loading, .error {
+      margin: 0;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .error {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .cards {
+      display: grid;
+      gap: 12px;
+    }
+
+    article {
+      padding: 16px 16px 16px 18px;
+      border-radius: 14px;
+      background: #faf7f1;
+      border-left: 4px solid var(--accent);
+    }
+
+    article h3 {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+    }
+
+    article p {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 800px) {
+      .layout, .fields { grid-template-columns: 1fr; }
+      main { width: min(100% - 24px, 1080px); padding-top: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>能量指引</h1>
+      <p>填写出生信息与想问的事。解读结果会按核心能量、事业指引和关系建议分开展示。</p>
+    </header>
+    <div class="layout">
+      <form id="guidance-form">
+        <div class="fields">
+          <label>
+            出生日期
+            <input id="birth-date" name="birth_date" type="date" required>
+          </label>
+          <label>
+            出生时间
+            <input id="birth-time" name="birth_time" type="time" value="12:00" required>
+          </label>
+          <label class="wide">
+            性别
+            <select id="gender" name="gender" required>
+              <option value="female">女</option>
+              <option value="male">男</option>
+              <option value="other">其他</option>
+            </select>
+          </label>
+          <label class="wide">
+            能量咨询问题
+            <textarea id="question" name="question" required>今日能量指引</textarea>
+          </label>
+          <label class="wide">
+            API 密钥
+            <input id="api-key" name="api_key" type="password" autocomplete="off" placeholder="对应请求头 X-API-Key">
+          </label>
+        </div>
+        <button id="submit-button" type="submit">开始解读</button>
+      </form>
+      <section class="results" aria-live="polite">
+        <h2>解读结果</h2>
+        <p id="empty-state" class="empty">提交后，三张结果卡片会显示在这里。</p>
+        <p id="loading-state" class="loading" hidden>正在解读，请稍候…</p>
+        <p id="error-state" class="error" hidden></p>
+        <div id="cards" class="cards" hidden></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const form = document.querySelector("#guidance-form");
+    const submitButton = document.querySelector("#submit-button");
+    const emptyState = document.querySelector("#empty-state");
+    const loadingState = document.querySelector("#loading-state");
+    const errorState = document.querySelector("#error-state");
+    const cards = document.querySelector("#cards");
+
+    const cardFields = [
+      ["core_energy", "核心能量"],
+      ["career_guidance", "事业指引"],
+      ["relationship_advice", "关系建议"],
+    ];
+
+    function setView(mode) {
+      emptyState.hidden = mode !== "empty";
+      loadingState.hidden = mode !== "loading";
+      errorState.hidden = mode !== "error";
+      cards.hidden = mode !== "success";
+      submitButton.disabled = mode === "loading";
+      submitButton.textContent = mode === "loading" ? "解读中…" : "开始解读";
+    }
+
+    function showError(message) {
+      errorState.textContent = message;
+      setView("error");
+    }
+
+    function showGuidance(data) {
+      cards.replaceChildren();
+      cardFields.forEach(([key, title]) => {
+        const article = document.createElement("article");
+        const heading = document.createElement("h3");
+        const body = document.createElement("p");
+        heading.textContent = title;
+        body.textContent = data[key] || "（未返回内容）";
+        article.append(heading, body);
+        cards.append(article);
+      });
+      setView("success");
+    }
+
+    function errorMessage(status, detail) {
+      if (status === 401) return "未授权：请检查 API 密钥是否正确。";
+      if (typeof detail === "string" && detail) return detail;
+      if (Array.isArray(detail)) {
+        return detail.map((item) => item.msg || "请求参数有误").join("；");
+      }
+      return "请求失败（" + status + "）";
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setView("loading");
+      const apiKey = document.querySelector("#api-key").value.trim();
+      const headers = { "Content-Type": "application/json" };
+      if (apiKey) headers["X-API-Key"] = apiKey;
+      try {
+        const response = await fetch("/api/energy-guidance", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            birth_date: document.querySelector("#birth-date").value,
+            birth_time: document.querySelector("#birth-time").value,
+            gender: document.querySelector("#gender").value,
+            question: document.querySelector("#question").value.trim(),
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showError(errorMessage(response.status, payload.detail));
+          return;
+        }
+        showGuidance(payload.data || {});
+      } catch (error) {
+        showError("网络异常，暂时无法连接解读服务。");
+      }
+    });
+  </script>
+</body>
+</html>

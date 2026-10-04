@@ -25,13 +25,29 @@ MOCK_GUIDANCE = {
 
 
 def test_health_check_returns_ok():
-    response = client.get("/")
+    response = client.get("/", headers={"Accept": "application/json"})
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
         "message": "ZenAI Astrology & Energy API is running smoothly!",
     }
+
+
+def test_ui_page_is_served():
+    response = client.get("/ui")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "开始解读" in response.text
+    assert "核心能量" in response.text
+
+
+def test_browser_root_returns_page():
+    response = client.get("/", headers={"Accept": "text/html"})
+
+    assert response.status_code == 200
+    assert "开始解读" in response.text
 
 
 def test_energy_guidance_requires_api_key(monkeypatch):

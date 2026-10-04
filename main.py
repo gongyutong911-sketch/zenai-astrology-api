@@ -2,11 +2,16 @@ import logging
 import os
 import secrets
 import time
+from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from astrology_engine import get_astrology_energy_guidance
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
 
@@ -49,9 +54,24 @@ def configure_runtime_logging() -> None:
     configure_logging()
 
 
+def _test_page() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
+
+
 @app.get("/")
-def read_root():
+def read_root(request: Request):
+    # 浏览器打开首页时返回测试页；不带 text/html 的探测仍返回 JSON，供 Render 存活检查使用。
+    if "text/html" in request.headers.get("accept", ""):
+        return _test_page()
     return {"status": "ok", "message": "ZenAI Astrology & Energy API is running smoothly!"}
+
+
+@app.get("/ui", include_in_schema=False)
+def test_ui():
+    return _test_page()
+
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def _redact_birth_date(value: str) -> str:
