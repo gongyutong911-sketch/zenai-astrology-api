@@ -26,9 +26,9 @@ def get_astrology_energy_guidance(birth_date: str, birth_time: str = "12:00", ge
         请从今日能量场、运势走向以及实用建议三个方面进行深度解析，语言温暖、富有洞察力。
         """
         
-        # 使用标准 Chat Completions 接口调用
+        # 使用标准 Chat Completions 接口调用。模型名需与当前中转网关一致，可用 OPENAI_MODEL 覆盖。
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # 或者根据你当前中转服务所支持的模型名称调整（如 gpt-4o 等）
+            model=os.getenv("OPENAI_MODEL", "deepseek-flash"),
             messages=[
                 {"role": "system", "content": "你是一位专业的能量命理导师。"},
                 {"role": "user", "content": prompt}
