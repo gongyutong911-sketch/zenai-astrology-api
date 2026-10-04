@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import time
 
 from openai import (
     APIConnectionError,
@@ -9,6 +11,8 @@ from openai import (
     RateLimitError,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+logger = logging.getLogger(__name__)
 
 # 从环境变量中读取密钥和可选的自定义 Base URL（兼容标准 OpenAI 协议及中转网关）
 api_key = os.getenv("OPENAI_API_KEY")
@@ -25,23 +29,52 @@ GUIDANCE_FIELDS = ("core_energy", "career_guidance", "relationship_advice")
 RETRYABLE_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError)
 
 
+def _log_retry(retry_state) -> None:
+    exc = retry_state.outcome.exception() if retry_state.outcome else None
+    wait_s = retry_state.next_action.sleep if retry_state.next_action else 0
+    logger.warning(
+        "model_call_retry attempt=%s wait_s=%.1f error=%s",
+        retry_state.attempt_number,
+        wait_s,
+        type(exc).__name__ if exc else "unknown",
+    )
+
+
 @retry(
     retry=retry_if_exception_type(RETRYABLE_ERRORS),
     wait=wait_exponential(multiplier=1, min=1, max=8),
     stop=stop_after_attempt(3),  # 首次请求之外，最多再自动重试 2 次
+    before_sleep=_log_retry,
     reraise=True,
 )
 def _create_guidance_completion(messages: list[dict]) -> str:
     """调用标准 Chat Completions，并在可恢复错误上按指数退避重试。"""
-    response = client.chat.completions.create(
-        model=os.getenv("OPENAI_MODEL", "deepseek-flash"),
-        messages=messages,
-        temperature=0.7,
-        response_format={"type": "json_object"},
-    )
+    model = os.getenv("OPENAI_MODEL", "deepseek-flash")
+    started = time.perf_counter()
+    logger.info("model_request_start model=%s", model)
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+    except Exception as exc:
+        logger.warning(
+            "model_request_failed model=%s elapsed_ms=%.1f error=%s",
+            model,
+            (time.perf_counter() - started) * 1000,
+            type(exc).__name__,
+        )
+        raise
     content = response.choices[0].message.content
     if not content:
         raise ValueError("模型未返回内容")
+    logger.info(
+        "model_request_done model=%s elapsed_ms=%.1f",
+        model,
+        (time.perf_counter() - started) * 1000,
+    )
     return content
 
 
@@ -97,4 +130,17 @@ def get_astrology_energy_guidance(
         },
         {"role": "user", "content": prompt},
     ]
-    return _parse_guidance(_create_guidance_completion(messages))
+    started = time.perf_counter()
+    try:
+        guidance = _parse_guidance(_create_guidance_completion(messages))
+    except Exception:
+        logger.exception(
+            "model_call_exhausted elapsed_ms=%.1f",
+            (time.perf_counter() - started) * 1000,
+        )
+        raise
+    logger.info(
+        "model_call_succeeded elapsed_ms=%.1f",
+        (time.perf_counter() - started) * 1000,
+    )
+    return guidance
