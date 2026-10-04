@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from astrology_engine import get_astrology_energy_guidance
@@ -21,7 +20,18 @@ class EnergyRequest(BaseModel):
     gender: str = "female"
     question: str = "今日能量指引"
 
-@app.post("/api/energy-guidance")
+class EnergyGuidance(BaseModel):
+    core_energy: str
+    career_guidance: str
+    relationship_advice: str
+
+
+class EnergyResponse(BaseModel):
+    status: str
+    data: EnergyGuidance
+
+
+@app.post("/api/energy-guidance", response_model=EnergyResponse)
 def generate_energy_guidance(request: EnergyRequest):
     try:
         # 调用 astrology_engine.py 中的核心计算与 AI 生成函数
@@ -29,8 +39,9 @@ def generate_energy_guidance(request: EnergyRequest):
             birth_date=request.birth_date,
             birth_time=request.birth_time,
             gender=request.gender,
-            question=request.question
+            question=request.question,
         )
-        return {"status": "success", "data": result}
+        guidance = EnergyGuidance.model_validate(result)
+        return EnergyResponse(status="success", data=guidance)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
