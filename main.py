@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from astrology_engine import get_astrology_energy_guidance
-from bazi import compose_deep_report
+from bazi import compose_deep_report, normalize_zi_hour, resolve_birth_place
 from database import (
     ConflictingIdentity,
     DeepReportLocked,
@@ -227,6 +227,10 @@ class DeepReportRequest(BaseModel):
     birth_time: str = "12:00"
     gender: str = "female"
     question: str = "想看清此刻的处境"
+    birth_city: Optional[str] = None
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
+    zi_hour_mode: str = "early"
     user_id: Optional[int] = None
     user_token: Optional[str] = None
 
@@ -260,6 +264,17 @@ class DaYunStep(BaseModel):
 
 class BaziChartModel(BaseModel):
     solar: str
+    clock_time: str
+    true_solar_time: str
+    longitude: float
+    latitude: Optional[float] = None
+    birth_city: Optional[str] = None
+    longitude_offset_minutes: float
+    equation_of_time_minutes: float
+    zi_hour_mode: str
+    zi_hour_label: str
+    month_jie: str
+    month_jie_at: str
     gender_label: str
     day_master: str
     pillars: BaziPillars
@@ -540,6 +555,8 @@ def create_deep_report(
         access = _known_access(member, request.user_id, request.user_token)
         datetime.strptime(request.birth_date, "%Y-%m-%d")
         datetime.strptime(request.birth_time[:5], "%H:%M")
+        resolve_birth_place(request.birth_city, request.longitude, request.latitude)
+        normalize_zi_hour(request.zi_hour_mode)
         saved = authorize_deep_report(
             user_id=access.get("user_id"),
             user_token=access.get("user_token"),
@@ -549,6 +566,10 @@ def create_deep_report(
             request.birth_time,
             request.gender,
             request.question,
+            longitude=request.longitude,
+            latitude=request.latitude,
+            birth_city=request.birth_city,
+            zi_hour_mode=request.zi_hour_mode,
         )
     except UnknownUser as exc:
         raise HTTPException(status_code=404, detail=str(exc))

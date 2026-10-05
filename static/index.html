@@ -132,7 +132,7 @@
       letter-spacing: 0.08em;
     }
 
-    label.wide { grid-column: span 3; }
+    label.wide { grid-column: 1 / -1; }
     label.question { grid-column: span 2; }
 
     input, select, textarea {
@@ -604,7 +604,126 @@
       letter-spacing: 0.04em;
     }
 
-    .deep-status { margin: 0; color: #e7c27a; letter-spacing: 0.04em; }
+    .deep-status { margin: 0; color: #e7c27a; letter-spacing: 0.04em; white-space: pre-line; }
+
+    .field-note { grid-column: 1 / -1; margin: 0; line-height: 1.6; }
+
+    .birth-clock { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; }
+
+    .clock-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .clock-head span:first-child { letter-spacing: 0.16em; }
+
+    .clock-readout {
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      font-size: 0.95rem;
+    }
+
+    .clock-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stepper {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 8px 4px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 244, 226, 0.16);
+      background: rgba(8, 10, 16, 0.35);
+    }
+
+    .stepper button {
+      width: 34px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid rgba(231, 194, 122, 0.38);
+      color: var(--gold);
+      background: rgba(231, 194, 122, 0.08);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .stepper button:hover { background: rgba(231, 194, 122, 0.18); }
+    .stepper button:active { transform: scale(0.92); }
+
+    .stepper input {
+      width: 100%;
+      padding: 2px 0;
+      border: 0;
+      background: transparent;
+      text-align: center;
+      font-size: 1.28rem;
+      letter-spacing: 0;
+    }
+
+    .stepper input:focus { outline: none; }
+    .stepper:focus-within {
+      border-color: transparent;
+      outline: 2px solid rgba(231, 194, 122, 0.45);
+    }
+
+    .stepper span { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.16em; }
+
+    .city-field { position: relative; }
+    .city-chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+    .city-chip {
+      border: 1px solid rgba(231, 194, 122, 0.32);
+      border-radius: 999px;
+      padding: 6px 12px;
+      color: #f3e2bc;
+      background: rgba(231, 194, 122, 0.06);
+      letter-spacing: 0.04em;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .city-chip:hover, .city-chip.is-on { background: rgba(231, 194, 122, 0.18); border-color: rgba(231, 194, 122, 0.7); }
+    .city-chip:active { transform: scale(0.96); }
+
+    .city-suggest {
+      position: absolute;
+      z-index: 4;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      margin: 0;
+      padding: 6px;
+      list-style: none;
+      border-radius: 16px;
+      border: 1px solid rgba(231, 194, 122, 0.35);
+      background: #16141c;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .city-suggest button {
+      width: 100%;
+      text-align: left;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    .city-suggest button:hover, .city-suggest button.is-active { background: rgba(231, 194, 122, 0.16); }
+
+    .deep-go {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-size: 180% 100%;
+    }
+
+    .deep-go .btn-orbit { display: none; border-color: rgba(26, 18, 12, 0.28); border-top-color: #1a120c; }
+    .deep-go.is-loading { animation: gradient-shift 1.2s ease infinite; }
+    .deep-go.is-loading .btn-orbit { display: inline-block; }
     .deep-hint { min-height: 1.4em; margin: 8px 0 0; color: rgba(246, 237, 216, 0.7); }
 
     .deep-go, .deep-buy {
@@ -664,6 +783,14 @@
     @media (max-width: 640px) {
       main { width: min(100% - 20px, 1120px); padding-top: 20px; }
       .fields, .cards, .plans, .pillar-row { grid-template-columns: 1fr 1fr; }
+      label.span-sm { grid-column: 1 / -1; }
+      .clock-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+      .stepper[data-part="year"],
+      .stepper[data-part="month"],
+      .stepper[data-part="day"] { grid-column: span 2; }
+      .stepper[data-part="hour"],
+      .stepper[data-part="minute"] { grid-column: span 3; }
+      .stepper input { font-size: 1.12rem; }
       .nav { align-items: flex-start; }
       h1 { font-size: 2.4rem; }
       .modal-actions { flex-direction: column; }
@@ -671,7 +798,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .halo span, .btn-orbit, .loading p, .primary::before, article, .modal-card, .upgrade-cta { animation: none; }
+      .halo span, .btn-orbit, .loading p, .primary::before, article, .modal-card, .upgrade-cta, .deep-go.is-loading { animation: none; }
       .primary, .ghost { transition: none; }
     }
   </style>
@@ -698,7 +825,10 @@
       </div>
       <p id="deep-status" class="deep-status">未解锁 / 点击深度测算</p>
       <p id="deep-hint" class="deep-hint"></p>
-      <button id="deep-open" class="deep-go" type="button">开始深度排盘</button>
+      <button id="deep-open" class="deep-go" type="button">
+        <span class="btn-orbit" aria-hidden="true"></span>
+        <span id="deep-open-label">开始深度排盘</span>
+      </button>
       <div id="deep-report" class="deep-report" hidden>
         <p id="deep-chart-note" class="deep-status"></p>
         <div id="deep-pillars" class="pillar-row"></div>
@@ -721,14 +851,46 @@
     </section>
     <form id="guidance-form" class="glass">
       <div class="fields">
-        <label>
-          出生日期
-          <input id="birth-date" name="birth_date" type="date" required>
-        </label>
-        <label>
-          出生时间
-          <input id="birth-time" name="birth_time" type="time" value="12:00" required>
-        </label>
+        <div class="birth-clock" id="birth-clock">
+          <div class="clock-head">
+            <span>出生时刻</span>
+            <span id="birth-readout" class="clock-readout">1990年1月15日 12:00</span>
+          </div>
+          <div class="clock-grid" role="group" aria-label="出生年月日时分">
+            <div class="stepper" data-part="year">
+              <button type="button" data-step="1" aria-label="年加一">+</button>
+              <input id="birth-year" data-part="year" inputmode="numeric" aria-label="年" value="1990" maxlength="4">
+              <span>年</span>
+              <button type="button" data-step="-1" aria-label="年减一">−</button>
+            </div>
+            <div class="stepper" data-part="month">
+              <button type="button" data-step="1" aria-label="月加一">+</button>
+              <input data-part="month" inputmode="numeric" aria-label="月" value="1" maxlength="2">
+              <span>月</span>
+              <button type="button" data-step="-1" aria-label="月减一">−</button>
+            </div>
+            <div class="stepper" data-part="day">
+              <button type="button" data-step="1" aria-label="日加一">+</button>
+              <input data-part="day" inputmode="numeric" aria-label="日" value="15" maxlength="2">
+              <span>日</span>
+              <button type="button" data-step="-1" aria-label="日减一">−</button>
+            </div>
+            <div class="stepper" data-part="hour">
+              <button type="button" data-step="1" aria-label="时加一">+</button>
+              <input data-part="hour" inputmode="numeric" aria-label="时" value="12" maxlength="2">
+              <span>时</span>
+              <button type="button" data-step="-1" aria-label="时减一">−</button>
+            </div>
+            <div class="stepper" data-part="minute">
+              <button type="button" data-step="1" aria-label="分加一">+</button>
+              <input data-part="minute" inputmode="numeric" aria-label="分" value="0" maxlength="2">
+              <span>分</span>
+              <button type="button" data-step="-1" aria-label="分减一">−</button>
+            </div>
+          </div>
+          <input id="birth-date" name="birth_date" type="hidden" value="1990-01-15">
+          <input id="birth-time" name="birth_time" type="hidden" value="12:00">
+        </div>
         <label>
           性别
           <select id="gender" name="gender" required>
@@ -737,6 +899,35 @@
             <option value="other">其他</option>
           </select>
         </label>
+        <label class="city-field">
+          出生城市
+          <input id="birth-city" name="birth_city" type="text" autocomplete="off" placeholder="输入北京、上海、成都…" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-suggest">
+          <ul id="city-suggest" class="city-suggest" role="listbox" hidden></ul>
+        </label>
+        <label class="span-sm">
+          子时划分
+          <select id="zi-hour-mode" name="zi_hour_mode">
+            <option value="early">早子时 · 23点日柱属当日</option>
+            <option value="late">晚子时 · 23点日柱属次日</option>
+          </select>
+        </label>
+        <label class="wide">
+          出生经度
+          <input id="birth-longitude" name="longitude" type="number" inputmode="decimal" min="-180" max="180" step="0.01" placeholder="东经为正，默认 120。选择城市后会自动填入">
+        </label>
+        <div class="city-chips" aria-label="常见城市">
+          <button class="city-chip" type="button" data-city="北京">北京</button>
+          <button class="city-chip" type="button" data-city="上海">上海</button>
+          <button class="city-chip" type="button" data-city="广州">广州</button>
+          <button class="city-chip" type="button" data-city="深圳">深圳</button>
+          <button class="city-chip" type="button" data-city="成都">成都</button>
+          <button class="city-chip" type="button" data-city="香港">香港</button>
+          <button class="city-chip" type="button" data-city="台北">台北</button>
+          <button class="city-chip" type="button" data-city="杭州">杭州</button>
+          <button class="city-chip" type="button" data-city="西安">西安</button>
+          <button class="city-chip" type="button" data-city="乌鲁木齐">乌鲁木齐</button>
+        </div>
+        <p id="city-match" class="quiet field-note">点选城市，或输入城市名，经度会自动填上。没填时按东经 120° 做真太阳时校正。</p>
         <label class="question">
           想觉察的问题
           <textarea id="question" name="question" required>今日能量觉察</textarea>
@@ -846,6 +1037,7 @@
     const deepStatus = document.querySelector("#deep-status");
     const deepHint = document.querySelector("#deep-hint");
     const deepOpen = document.querySelector("#deep-open");
+    const deepOpenLabel = document.querySelector("#deep-open-label");
     const deepReport = document.querySelector("#deep-report");
     const deepChartNote = document.querySelector("#deep-chart-note");
     const deepPillars = document.querySelector("#deep-pillars");
@@ -1287,8 +1479,17 @@
     function renderDeepReport(payload) {
       const chart = payload.chart || {};
       const pillars = chart.pillars || {};
-      deepChartNote.textContent = (chart.gender_label || "") + " · 日主 " + (chart.day_master || "")
-        + " · " + ((chart.strength && chart.strength.label) || "");
+      const placeBits = [];
+      if (chart.true_solar_time) placeBits.push("真太阳时 " + chart.true_solar_time);
+      if (chart.birth_city) placeBits.push(chart.birth_city);
+      if (typeof chart.longitude === "number") placeBits.push("东经 " + Number(chart.longitude).toFixed(2) + "°");
+      if (chart.month_jie && chart.month_jie_at) placeBits.push(chart.month_jie + "交节 " + chart.month_jie_at);
+      if (chart.zi_hour_label) placeBits.push(chart.zi_hour_label);
+      deepChartNote.textContent = [
+        (chart.gender_label || "") + " · 日主 " + (chart.day_master || "")
+          + " · " + ((chart.strength && chart.strength.label) || ""),
+        placeBits.join(" · "),
+      ].filter(Boolean).join("\n");
       deepPillars.replaceChildren();
       [["year", "年柱"], ["month", "月柱"], ["day", "日柱"], ["hour", "时柱"]].forEach(([key, label]) => {
         const pillar = pillars[key];
@@ -1360,12 +1561,16 @@
       }
       const birthDate = document.querySelector("#birth-date").value;
       const birthTime = document.querySelector("#birth-time").value;
+      const birthCity = document.querySelector("#birth-city");
+      const birthLongitude = document.querySelector("#birth-longitude");
       if (!birthDate || !birthTime) {
-        deepHint.textContent = "先填写出生日期和时间，这张盘才排得出来。";
-        document.querySelector("#birth-date").focus();
+        deepHint.textContent = "先把出生年月日时分补全，这张盘才排得出来。";
+        document.querySelector("#birth-year").focus();
         return;
       }
       deepOpen.disabled = true;
+      deepOpen.classList.add("is-loading");
+      deepOpenLabel.textContent = "正在排盘…";
       deepHint.textContent = "正在排布四柱、十神与大运…";
       try {
         const response = await fetch("/api/deep-report", {
@@ -1376,6 +1581,10 @@
             birth_time: birthTime,
             gender: document.querySelector("#gender").value,
             question: document.querySelector("#question").value.trim(),
+            birth_city: birthCity.value || null,
+            longitude: birthLongitude.value === "" ? null : Number(birthLongitude.value),
+            latitude: birthPlaceLatitude(),
+            zi_hour_mode: document.querySelector("#zi-hour-mode").value || "early",
             user_token: token,
           }),
         });
@@ -1399,6 +1608,8 @@
         deepHint.textContent = "网络异常，暂时无法完成深度排盘。";
       } finally {
         deepOpen.disabled = false;
+        deepOpen.classList.remove("is-loading");
+        deepOpenLabel.textContent = "开始深度排盘";
       }
     }
 
@@ -1432,6 +1643,191 @@
       }
     }
 
+    const BIRTH_PLACES = [
+      ["北京", 116.41, 39.90], ["天津", 117.20, 39.13], ["上海", 121.47, 31.23], ["重庆", 106.55, 29.56],
+      ["广州", 113.26, 23.13], ["深圳", 114.06, 22.54], ["成都", 104.07, 30.67], ["杭州", 120.16, 30.25],
+      ["南京", 118.80, 32.06], ["武汉", 114.31, 30.59], ["西安", 108.94, 34.34], ["郑州", 113.63, 34.75],
+      ["长沙", 112.94, 28.23], ["沈阳", 123.43, 41.80], ["哈尔滨", 126.53, 45.80], ["长春", 125.32, 43.82],
+      ["昆明", 102.71, 25.04], ["乌鲁木齐", 87.62, 43.83], ["拉萨", 91.11, 29.65], ["兰州", 103.83, 36.06],
+      ["西宁", 101.78, 36.62], ["银川", 106.23, 38.49], ["呼和浩特", 111.75, 40.84], ["南宁", 108.37, 22.82],
+      ["海口", 110.32, 20.04], ["贵阳", 106.63, 26.65], ["福州", 119.30, 26.08], ["厦门", 118.09, 24.48],
+      ["青岛", 120.38, 36.07], ["大连", 121.62, 38.91], ["济南", 117.12, 36.65], ["合肥", 117.23, 31.82],
+      ["南昌", 115.86, 28.68], ["石家庄", 114.51, 38.04], ["太原", 112.55, 37.87], ["台北", 121.56, 25.04],
+      ["香港", 114.17, 22.32], ["澳门", 113.54, 22.19]
+    ].map(([name, longitude, latitude]) => ({ name, longitude, latitude }));
+
+    const clockLimits = { year: [1900, 2100], month: [1, 12], day: [1, 31], hour: [0, 23], minute: [0, 59] };
+    const clockSeeds = { year: 1990, month: 1, day: 15, hour: 12, minute: 0 };
+
+    function clockInput(part) {
+      return document.querySelector('.stepper input[data-part="' + part + '"]');
+    }
+
+    function daysInMonth(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function syncClock() {
+      const year = Number(clockInput("year").value);
+      const month = Number(clockInput("month").value);
+      const day = Number(clockInput("day").value);
+      const hour = Number(clockInput("hour").value);
+      const minute = Number(clockInput("minute").value);
+      const readout = document.querySelector("#birth-readout");
+      const ready = [year, month, day, hour, minute].every((value) => Number.isInteger(value));
+      if (!ready || year < 1900 || year > 2100 || month < 1 || month > 12 || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        document.querySelector("#birth-date").value = "";
+        document.querySelector("#birth-time").value = "";
+        readout.textContent = "把年月日时分补全";
+        return;
+      }
+      const maxDay = daysInMonth(year, month);
+      if (day < 1 || day > maxDay) {
+        document.querySelector("#birth-date").value = "";
+        document.querySelector("#birth-time").value = "";
+        readout.textContent = month + "月没有" + day + "日";
+        return;
+      }
+      const date = year + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+      const time = String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+      document.querySelector("#birth-date").value = date;
+      document.querySelector("#birth-time").value = time;
+      readout.textContent = year + "年" + month + "月" + day + "日 " + time;
+    }
+
+    function nudgeClock(part, delta) {
+      const input = clockInput(part);
+      const text = input.value.trim();
+      const current = Number(text);
+      const [min, max] = clockLimits[part];
+      let next = text !== "" && Number.isInteger(current) ? current + delta : clockSeeds[part];
+      if (part === "day") {
+        const year = Number(clockInput("year").value) || clockSeeds.year;
+        const month = Number(clockInput("month").value) || clockSeeds.month;
+        const cap = daysInMonth(year, month);
+        if (next > cap) next = 1;
+        if (next < 1) next = cap;
+      } else {
+        if (next > max) next = min;
+        if (next < min) next = max;
+      }
+      input.value = String(next);
+      if (part === "month" || part === "year") {
+        const dayInput = clockInput("day");
+        const cap = daysInMonth(Number(clockInput("year").value) || clockSeeds.year, Number(clockInput("month").value) || clockSeeds.month);
+        if (Number(dayInput.value) > cap) dayInput.value = String(cap);
+      }
+      syncClock();
+    }
+
+    document.querySelector("#birth-clock").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-step]");
+      if (!button) return;
+      nudgeClock(button.parentElement.dataset.part, Number(button.dataset.step));
+    });
+    document.querySelectorAll(".stepper input").forEach((input) => {
+      input.addEventListener("input", () => {
+        input.value = input.value.replace(/[^\d]/g, "").slice(0, input.maxLength);
+        syncClock();
+      });
+    });
+    syncClock();
+
+    function placeByName(name) {
+      return BIRTH_PLACES.find((item) => item.name === name) || null;
+    }
+
+    function applyPlace(place, fillName) {
+      const city = document.querySelector("#birth-city");
+      const longitude = document.querySelector("#birth-longitude");
+      const suggest = document.querySelector("#city-suggest");
+      if (fillName) city.value = place.name;
+      const longitudeText = place.longitude.toFixed(2);
+      city.dataset.longitude = longitudeText;
+      city.dataset.latitude = String(place.latitude);
+      longitude.value = longitudeText;
+      longitude.dataset.autofilled = "1";
+      document.querySelector("#city-match").textContent = "已匹配 " + place.name + " · 东经 " + longitudeText + "°，真太阳时会按这个经度校正。";
+      document.querySelectorAll(".city-chip").forEach((chip) => {
+        chip.classList.toggle("is-on", chip.dataset.city === place.name);
+      });
+      suggest.hidden = true;
+      city.setAttribute("aria-expanded", "false");
+    }
+
+    function releaseAutofill() {
+      const city = document.querySelector("#birth-city");
+      const longitude = document.querySelector("#birth-longitude");
+      if (longitude.dataset.autofilled === "1") {
+        longitude.value = "";
+        delete longitude.dataset.autofilled;
+      }
+      delete city.dataset.longitude;
+      delete city.dataset.latitude;
+      document.querySelectorAll(".city-chip").forEach((chip) => chip.classList.remove("is-on"));
+      document.querySelector("#city-match").textContent = "还没有匹配到城市。可以继续输入，或直接填写经度。";
+    }
+
+    function renderCitySuggestions() {
+      const city = document.querySelector("#birth-city");
+      const suggest = document.querySelector("#city-suggest");
+      const query = city.value.trim();
+      const exact = placeByName(query);
+      if (exact) applyPlace(exact, false);
+      else if (city.dataset.longitude) releaseAutofill();
+      if (!query && !exact) {
+        document.querySelector("#city-match").textContent = "点选城市，或输入城市名，经度会自动填上。没填时按东经 120° 做真太阳时校正。";
+      }
+      const hits = query ? BIRTH_PLACES.filter((item) => item.name.includes(query)).slice(0, 8) : [];
+      suggest.replaceChildren();
+      if (!hits.length || exact) {
+        suggest.hidden = true;
+        city.setAttribute("aria-expanded", "false");
+        return;
+      }
+      hits.forEach((item) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("role", "option");
+        button.textContent = item.name + " · " + item.longitude.toFixed(2) + "°E";
+        button.addEventListener("mousedown", (event) => event.preventDefault());
+        button.addEventListener("click", () => applyPlace(item, true));
+        suggest.append(button);
+      });
+      suggest.hidden = false;
+      city.setAttribute("aria-expanded", "true");
+    }
+
+    function birthPlaceLatitude() {
+      const city = document.querySelector("#birth-city");
+      const longitude = document.querySelector("#birth-longitude");
+      if (!city.dataset.longitude || longitude.value !== city.dataset.longitude) return null;
+      const latitude = Number(city.dataset.latitude);
+      return Number.isFinite(latitude) ? latitude : null;
+    }
+
+    document.querySelector("#birth-city").addEventListener("input", renderCitySuggestions);
+    document.querySelector("#birth-city").addEventListener("focus", renderCitySuggestions);
+    document.querySelector("#birth-city").addEventListener("blur", () => {
+      const suggest = document.querySelector("#city-suggest");
+      suggest.hidden = true;
+      document.querySelector("#birth-city").setAttribute("aria-expanded", "false");
+    });
+    document.querySelector("#birth-longitude").addEventListener("input", () => {
+      const longitude = document.querySelector("#birth-longitude");
+      const city = document.querySelector("#birth-city");
+      if (longitude.dataset.autofilled === "1" && longitude.value !== city.dataset.longitude) {
+        delete longitude.dataset.autofilled;
+        document.querySelector("#city-match").textContent = "经度已按你手填的数字使用。";
+      }
+    });
+    document.querySelector(".city-chips").addEventListener("click", (event) => {
+      const chip = event.target.closest(".city-chip");
+      if (!chip) return;
+      const place = placeByName(chip.dataset.city);
+      if (place) applyPlace(place, true);
+    });
+
     deepOpen.addEventListener("click", requestDeepReport);
     deepBuy.addEventListener("click", buyDeepCredit);
     deepBuyClose.addEventListener("click", closeDeepBuy);
@@ -1442,11 +1838,19 @@
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      syncClock();
+      const birthDate = document.querySelector("#birth-date").value;
+      const birthTime = document.querySelector("#birth-time").value;
+      if (!birthDate || !birthTime) {
+        showError("先把出生年月日时分补全。");
+        document.querySelector("#birth-year").focus();
+        return;
+      }
       setView("loading");
       const token = localStorage.getItem(TOKEN_KEY) || "";
       const body = {
-        birth_date: document.querySelector("#birth-date").value,
-        birth_time: document.querySelector("#birth-time").value,
+        birth_date: birthDate,
+        birth_time: birthTime,
         gender: document.querySelector("#gender").value,
         question: document.querySelector("#question").value.trim(),
       };

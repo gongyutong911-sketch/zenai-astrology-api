@@ -61,6 +61,10 @@ def test_ui_page_is_served():
     assert "人生战略与财富矩阵深度排盘" in response.text
     assert "模拟购买 1 次额度" in response.text
     assert "¥68" in response.text
+    assert "出生经度" in response.text
+    assert "乌鲁木齐" in response.text
+    assert "早子时" in response.text
+    assert "晚子时" in response.text
 
 
 def test_browser_root_returns_page():
