@@ -3,19 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>能量指引</title>
+  <title>能量觉察</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f3efe6;
-      --ink: #1d1a16;
-      --muted: #6d645b;
-      --line: #e3d9cc;
-      --card: #fffdf8;
-      --accent: #8d3d32;
-      --accent-dark: #6e2d25;
-      --danger-bg: #f8e8e4;
-      --danger: #8a2e24;
+      color-scheme: dark;
+      --ink: #f6f1e8;
+      --muted: rgba(246, 241, 232, 0.68);
+      --line: rgba(255, 244, 226, 0.18);
+      --glass: rgba(255, 250, 244, 0.08);
+      --gold: #e7c27a;
+      --rose: #e7a3b0;
+      --danger: #ffd0c8;
+      --danger-bg: rgba(138, 46, 36, 0.35);
     }
 
     * { box-sizing: border-box; }
@@ -23,205 +22,859 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at top left, rgba(141, 61, 50, 0.08), transparent 32rem),
-        var(--bg);
       color: var(--ink);
       font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(ellipse at 12% -10%, rgba(231, 194, 122, 0.34), transparent 36rem),
+        radial-gradient(ellipse at 92% 0%, rgba(126, 168, 196, 0.28), transparent 32rem),
+        radial-gradient(ellipse at 50% 110%, rgba(168, 92, 122, 0.32), transparent 34rem),
+        #10131c;
     }
 
-    main {
-      width: min(1080px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 40px 0 56px;
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(255, 248, 236, 0.18) 0.6px, transparent 0.6px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 78%);
     }
+
+    body.modal-open { overflow: hidden; }
+
+    main {
+      position: relative;
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 72px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      margin: 0;
+      color: var(--gold);
+      font-size: 0.78rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      border: 0;
+      background: none;
+    }
+
+    .ghost {
+      border: 1px solid rgba(231, 194, 122, 0.4);
+      border-radius: 999px;
+      padding: 10px 16px;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      background: rgba(231, 194, 122, 0.08);
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .ghost:hover { background: rgba(231, 194, 122, 0.16); transform: translateY(-1px); }
 
     header { margin-bottom: 28px; }
 
     h1 {
-      margin: 0 0 8px;
-      font-family: "Iowan Old Style", Palatino, "Palatino Linotype", "Songti SC", serif;
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      font-weight: 600;
-      letter-spacing: -0.03em;
+      margin: 0 0 10px;
+      font-family: "Iowan Old Style", Palatino, "Songti SC", serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 560;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
     }
 
-    header p {
+    header p, .quiet {
       margin: 0;
-      max-width: 38rem;
+      max-width: 40rem;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.7;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
-      gap: 24px;
-      align-items: start;
-    }
-
-    form, .results {
-      background: var(--card);
+    .glass {
+      background: linear-gradient(180deg, rgba(255, 250, 244, 0.12), var(--glass));
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 22px;
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
+
+    .history { margin-bottom: 22px; padding: 22px; }
+
+    form { padding: 22px; }
 
     .fields {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: 1fr 1fr 0.8fr;
+      gap: 14px 16px;
     }
 
     label {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 0.86rem;
+      gap: 8px;
       color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
     }
 
-    label.wide { grid-column: 1 / -1; }
+    label.wide { grid-column: span 3; }
+    label.question { grid-column: span 2; }
 
     input, select, textarea {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #fff;
+      border: 1px solid rgba(255, 244, 226, 0.16);
+      border-radius: 14px;
+      background: rgba(8, 10, 16, 0.35);
       color: var(--ink);
       font: inherit;
-      padding: 10px 12px;
+      letter-spacing: 0;
+      padding: 12px 14px;
     }
 
-    textarea { min-height: 110px; resize: vertical; }
+    textarea { min-height: 96px; resize: vertical; }
 
     input:focus, select:focus, textarea:focus {
-      outline: 2px solid rgba(141, 61, 50, 0.28);
-      border-color: var(--accent);
+      outline: 2px solid rgba(231, 194, 122, 0.45);
+      border-color: transparent;
     }
 
-    button {
-      margin-top: 16px;
+    .primary {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
       width: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #c9864a, #e7c27a 55%, #f3e2bc);
+      color: #2a1c12;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      padding: 14px 18px;
+      transition: transform 0.35s ease, filter 0.35s ease;
+    }
+
+    .primary::before {
+      content: "";
+      position: absolute;
+      inset: -40% auto -40% -30%;
+      width: 38%;
+      background: linear-gradient(90deg, transparent, rgba(255, 252, 245, 0.72), transparent);
+      transform: translateX(-180%) skewX(-18deg);
+      pointer-events: none;
+    }
+
+    .primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .primary:disabled { cursor: wait; filter: saturate(0.85); transform: none; }
+    .primary.is-glow::before,
+    .primary.is-loading::before { animation: sheen 1.15s ease; }
+    .primary.is-loading::before { animation-iteration-count: infinite; }
+
+    .btn-orbit {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid rgba(42, 28, 18, 0.25);
+      border-top-color: #2a1c12;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .primary.is-loading .btn-orbit { display: inline-block; }
+
+    .results { margin-top: 22px; }
+
+    .results-head, .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, "Songti SC", serif;
+      font-size: 1.7rem;
+      font-weight: 560;
+    }
+
+    .membership-note {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      color: var(--muted);
+      line-height: 1.7;
+      background: rgba(231, 194, 122, 0.08);
+      border: 1px solid rgba(231, 194, 122, 0.18);
+    }
+
+    .membership-note[hidden],
+    .activation-banner[hidden] { display: none; }
+
+    .tier-pill {
+      display: inline-flex;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      border: 1px solid rgba(231, 194, 122, 0.4);
+      background: rgba(231, 194, 122, 0.08);
+    }
+
+    .tier-pill.is-free {
+      color: #2a1c12;
+      border: 0;
+      background: linear-gradient(90deg, #f3e2bc, #e7c27a 42%, #e7a3b0);
+    }
+
+    .expiry-line,
+    #history-expiry {
+      display: block;
+      margin: 0;
+      color: var(--gold);
+      letter-spacing: 0.03em;
+    }
+
+    .upgrade-cta {
+      margin-top: 4px;
       border: 0;
       border-radius: 999px;
-      background: var(--accent);
-      color: #fffaf6;
-      font: inherit;
-      font-weight: 600;
-      padding: 12px 16px;
-      cursor: pointer;
+      padding: 11px 18px;
+      background: linear-gradient(100deg, #c9864a, #e7c27a 38%, #f3e2bc 62%, #e7a3b0);
+      background-size: 180% 100%;
+      color: #2a1c12;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      animation: gradient-shift 5s ease infinite;
     }
 
-    button:hover { background: var(--accent-dark); }
-    button:disabled { cursor: wait; opacity: 0.7; }
+    .upgrade-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
 
-    .results h2 {
+    .activation-banner {
       margin: 0 0 14px;
-      font-size: 1rem;
+      padding: 12px 16px;
+      border-radius: 16px;
+      color: #f8edd4;
       letter-spacing: 0.04em;
+      background: linear-gradient(90deg, rgba(201, 134, 74, 0.42), rgba(231, 194, 122, 0.16));
+      border: 1px solid rgba(243, 226, 188, 0.35);
     }
 
-    .empty, .loading, .error {
-      margin: 0;
-      line-height: 1.6;
+    .text-link {
+      margin-left: 8px;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .empty, .error { margin: 0; line-height: 1.7; color: var(--muted); }
+
+    .error {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(255, 208, 200, 0.25);
+    }
+
+    .loading {
+      display: grid;
+      justify-items: center;
+      gap: 16px;
+      padding: 28px 0 12px;
       color: var(--muted);
     }
 
-    .error {
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: var(--danger-bg);
-      color: var(--danger);
+    .loading p { margin: 0; animation: breath 2.8s ease-in-out infinite; }
+
+    .halo { position: relative; width: 84px; height: 84px; }
+
+    .halo span {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(231, 194, 122, 0.35);
+    }
+
+    .halo span:nth-child(1) { animation: pulse 2.4s ease-in-out infinite; }
+    .halo span:nth-child(2) {
+      inset: 14px;
+      border-color: rgba(231, 163, 176, 0.55);
+      animation: spin 3.2s linear infinite;
+      border-top-color: transparent;
+    }
+    .halo span:nth-child(3) {
+      inset: 28px;
+      background: radial-gradient(circle, var(--gold), transparent 68%);
+      border: 0;
+      animation: pulse 2.4s ease-in-out infinite reverse;
     }
 
     .cards {
       display: grid;
-      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
 
     article {
-      padding: 16px 16px 16px 18px;
-      border-radius: 14px;
-      background: #faf7f1;
-      border-left: 4px solid var(--accent);
+      padding: 18px 18px 20px;
+      min-height: 180px;
+      animation: rise 0.7s ease both;
     }
 
-    article h3 {
-      margin: 0 0 8px;
-      font-size: 0.95rem;
+    article:nth-child(2) { animation-delay: 0.05s; }
+    article:nth-child(3) { animation-delay: 0.1s; }
+    article:nth-child(4) { animation-delay: 0.15s; }
+    article:nth-child(5) { animation-delay: 0.2s; }
+    article:nth-child(6) { animation-delay: 0.25s; }
+
+    .card-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
     }
+
+    .badge {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: rgba(231, 194, 122, 0.14);
+      color: var(--gold);
+      flex: none;
+    }
+
+    .badge svg { width: 18px; height: 18px; }
+
+    article h3 { margin: 0; font-size: 1rem; letter-spacing: 0.04em; }
 
     article p {
       margin: 0;
+      color: rgba(246, 241, 232, 0.88);
       white-space: pre-wrap;
-      line-height: 1.7;
+      line-height: 1.75;
+      font-size: 0.95rem;
     }
 
-    @media (max-width: 800px) {
-      .layout, .fields { grid-template-columns: 1fr; }
-      main { width: min(100% - 24px, 1080px); padding-top: 24px; }
+    .is-locked {
+      border-style: dashed;
+      background:
+        linear-gradient(180deg, rgba(231, 194, 122, 0.08), rgba(255, 250, 244, 0.03));
+    }
+
+    .lock-hit {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      min-height: 144px;
+      text-align: left;
+    }
+
+    .lock-copy { color: var(--muted); line-height: 1.7; }
+    .lock-hint { margin-top: 14px; color: var(--gold); letter-spacing: 0.06em; font-size: 0.85rem; }
+
+    .timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 28px;
+      display: grid;
+      gap: 16px;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 12px;
+      bottom: 12px;
+      width: 1px;
+      background: linear-gradient(var(--gold), rgba(231, 163, 176, 0.2));
+    }
+
+    .timeline li { position: relative; padding: 16px 18px; }
+
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: -25px;
+      top: 24px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 14px rgba(231, 194, 122, 0.85);
+    }
+
+    .when {
+      margin: 0 0 6px;
+      color: var(--gold);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+    }
+
+    .timeline h3 { margin: 0 0 8px; font-size: 1.15rem; }
+
+    .meta { margin: 0 0 10px; color: var(--muted); font-size: 0.85rem; }
+
+    .snippets { display: grid; gap: 8px; }
+    .snippets p { margin: 0; line-height: 1.7; }
+    .snippets strong { color: var(--gold); font-weight: 600; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: safe center;
+      overflow: auto;
+      padding: 20px 20px 24px;
+      background: rgba(8, 6, 14, 0.64);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .modal[hidden] { display: none; }
+
+    .modal-card {
+      width: min(860px, 100%);
+      margin: 0;
+      padding: 20px 20px 16px;
+      animation: rise 0.45s ease;
+    }
+
+    .modal-card h2 { margin-bottom: 8px; }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+
+    .plan { position: relative; padding: 16px 14px 14px; display: flex; flex-direction: column; }
+    .plan-copy { flex: 1; }
+    .plan-featured {
+      border-color: rgba(231, 194, 122, 0.72);
+      background:
+        radial-gradient(120% 80% at 100% 0%, rgba(231, 194, 122, 0.2), transparent 55%),
+        rgba(255, 250, 242, 0.05);
+      box-shadow: 0 18px 40px rgba(201, 134, 74, 0.16);
+    }
+    .plan-tag {
+      align-self: flex-start;
+      margin: 0 0 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      color: var(--gold);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      background: rgba(231, 194, 122, 0.12);
+    }
+    .plan-tag-hot {
+      color: #2a1c12;
+      font-weight: 700;
+      background: linear-gradient(90deg, #c9864a, #e7c27a 55%, #f3e2bc);
+    }
+    .plan-save {
+      margin: -4px 0 8px;
+      color: var(--gold);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+    }
+    .plan-buy {
+      margin-top: 14px;
+      width: 100%;
+      border-radius: 999px;
+      padding: 10px 12px;
+      background: linear-gradient(90deg, #c9864a, #e7c27a 55%, #f3e2bc);
+      color: #2a1c12;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .plan-buy:disabled { cursor: wait; filter: saturate(0.8); }
+    #checkout-status { min-height: 1.5em; }
+    .plan h3 { margin: 0 0 8px; color: var(--gold); font-size: 1rem; }
+    .plan .plan-copy { margin: 0; color: var(--muted); line-height: 1.7; font-size: 0.92rem; }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .modal-actions .primary,
+    .modal-actions .deep-buy {
+      width: auto;
+      margin-top: 0;
+      padding-inline: 22px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.92); opacity: 0.65; }
+      50% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes breath {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 1; }
+    }
+    @keyframes sheen {
+      from { transform: translateX(-180%) skewX(-18deg); }
+      to { transform: translateX(420%) skewX(-18deg); }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .deep-entry {
+      position: relative;
+      margin: 8px 0 18px;
+      padding: 22px 22px 18px;
+      border-radius: 28px;
+      overflow: hidden;
+      color: #f6edd8;
+      background:
+        radial-gradient(90% 80% at 100% 0%, rgba(138, 92, 214, 0.42), transparent 52%),
+        radial-gradient(70% 60% at 0% 100%, rgba(201, 134, 74, 0.24), transparent 48%),
+        linear-gradient(165deg, #120d1e 0%, #221838 46%, #0c0a12 100%);
+      border: 1px solid rgba(231, 194, 122, 0.5);
+      box-shadow: 0 24px 60px rgba(10, 6, 22, 0.38);
+    }
+
+    .deep-kicker {
+      margin: 0 0 8px;
+      color: #e7c27a;
+      letter-spacing: 0.22em;
+      font-size: 0.75rem;
+    }
+
+    .deep-entry h2 {
+      max-width: 18em;
+      color: #f8edd4;
+      font-size: 1.65rem;
+    }
+
+    .deep-lead { margin: 10px 0 0; max-width: 40em; color: rgba(246, 237, 216, 0.78); line-height: 1.7; }
+
+    .deep-modules { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+
+    .deep-modules span,
+    .deep-price {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(231, 194, 122, 0.38);
+      color: #f3e2bc;
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+    }
+
+    .deep-status { margin: 0; color: #e7c27a; letter-spacing: 0.04em; }
+    .deep-hint { min-height: 1.4em; margin: 8px 0 0; color: rgba(246, 237, 216, 0.7); }
+
+    .deep-go, .deep-buy {
+      margin-top: 14px;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: linear-gradient(100deg, #8a6230, #e7c27a 46%, #f8edd4 78%, #c9a4de);
+      background-size: 160% 100%;
+      color: #1a120c;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .deep-go:disabled, .deep-buy:disabled { cursor: wait; filter: saturate(0.75); }
+
+    .deep-report {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(231, 194, 122, 0.22);
+    }
+
+    .pillar-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+
+    .pillar-row article {
+      min-height: 0;
+      padding: 10px 8px;
+      border-radius: 16px;
+      text-align: center;
+      background: rgba(255, 248, 236, 0.05);
+      border: 1px solid rgba(231, 194, 122, 0.2);
+      animation: none;
+    }
+
+    .pillar-row strong { display: block; color: #f8edd4; font-size: 1.15rem; letter-spacing: 0.12em; }
+    .pillar-row span { color: #e7c27a; font-size: 0.78rem; }
+
+    .deep-chapter { margin-top: 14px; min-height: 0; padding: 0; animation: none; }
+    .deep-chapter h3 { margin: 0 0 6px; color: #f3e2bc; font-size: 1.05rem; }
+    .deep-chapter p { margin: 0; color: rgba(246, 237, 216, 0.86); line-height: 1.85; }
+
+    .deep-modal { width: min(560px, 100%); }
+    .deep-price-lg {
+      margin: 8px 0 12px;
+      color: #f8edd4;
+      font-size: 2rem;
+      letter-spacing: 0.08em;
+    }
+
+    @media (max-width: 900px) {
+      .fields { grid-template-columns: 1fr 1fr; }
+      .plans { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      label.wide, label.question { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 640px) {
+      main { width: min(100% - 20px, 1120px); padding-top: 20px; }
+      .fields, .cards, .plans, .pillar-row { grid-template-columns: 1fr 1fr; }
+      .nav { align-items: flex-start; }
+      h1 { font-size: 2.4rem; }
+      .modal-actions { flex-direction: column; }
+      .ghost, .modal-actions .primary, .modal-actions .deep-buy { width: 100%; margin-top: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .halo span, .btn-orbit, .loading p, .primary::before, article, .modal-card, .upgrade-cta { animation: none; }
+      .primary, .ghost { transition: none; }
     }
   </style>
 </head>
 <body>
   <main>
+    <nav class="nav">
+      <p class="brand">ZenAI</p>
+      <button id="history-button" class="ghost" type="button" aria-expanded="false" aria-controls="history-panel">我的状态复盘</button>
+    </nav>
     <header>
-      <h1>能量指引</h1>
-      <p>填写出生信息与想问的事。解读结果会按核心能量、事业指引和关系建议分开展示。</p>
+      <h1>能量觉察</h1>
+      <p>用一次状态复盘看见今天的内耗和思维盲点。前三个维度做能量状态诊断，后三个是 Pro 进阶版行动方案：财富行动、破局锦囊和每日幸运指引。</p>
     </header>
-    <div class="layout">
-      <form id="guidance-form">
-        <div class="fields">
-          <label>
-            出生日期
-            <input id="birth-date" name="birth_date" type="date" required>
-          </label>
-          <label>
-            出生时间
-            <input id="birth-time" name="birth_time" type="time" value="12:00" required>
-          </label>
-          <label class="wide">
-            性别
-            <select id="gender" name="gender" required>
-              <option value="female">女</option>
-              <option value="male">男</option>
-              <option value="other">其他</option>
-            </select>
-          </label>
-          <label class="wide">
-            能量咨询问题
-            <textarea id="question" name="question" required>今日能量指引</textarea>
-          </label>
-          <label class="wide">
-            API 密钥
-            <input id="api-key" name="api_key" type="password" autocomplete="off" placeholder="对应请求头 X-API-Key">
-          </label>
-        </div>
-        <button id="submit-button" type="submit">开始解读</button>
-      </form>
-      <section class="results" aria-live="polite">
-        <h2>解读结果</h2>
-        <p id="empty-state" class="empty">提交后，三张结果卡片会显示在这里。</p>
-        <p id="loading-state" class="loading" hidden>正在解读，请稍候…</p>
-        <p id="error-state" class="error" hidden></p>
-        <div id="cards" class="cards" hidden></div>
-      </section>
-    </div>
+    <section class="deep-entry" id="deep-entry">
+      <p class="deep-kicker">硬核排盘 · 深度定制</p>
+      <h2>🌟 人生战略与财富矩阵深度排盘</h2>
+      <p class="deep-lead">不同于每日的轻量能量觉察。这一份按出生时刻排出四柱、十神与旺衰，再写成可以慢慢读的大运报告。</p>
+      <div class="deep-modules" aria-label="报告模块">
+        <span>性格底色</span>
+        <span>财富格局</span>
+        <span>事业破局</span>
+        <span>流年大运</span>
+      </div>
+      <p id="deep-status" class="deep-status">未解锁 / 点击深度测算</p>
+      <p id="deep-hint" class="deep-hint"></p>
+      <button id="deep-open" class="deep-go" type="button">开始深度排盘</button>
+      <div id="deep-report" class="deep-report" hidden>
+        <p id="deep-chart-note" class="deep-status"></p>
+        <div id="deep-pillars" class="pillar-row"></div>
+        <div id="deep-chapters"></div>
+      </div>
+    </section>
+    <section id="history-panel" class="history glass" hidden>
+      <div class="panel-head">
+        <h2>我的状态复盘</h2>
+        <button id="history-close" class="ghost" type="button">收起</button>
+      </div>
+      <div id="history-loading" class="loading" hidden>
+        <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p>正在翻开你留下的能量足迹…</p>
+      </div>
+      <p id="history-expiry" class="quiet" hidden></p>
+      <p id="history-empty" class="empty" hidden></p>
+      <p id="history-error" class="error" hidden></p>
+      <ol id="history-list" class="timeline" hidden></ol>
+    </section>
+    <form id="guidance-form" class="glass">
+      <div class="fields">
+        <label>
+          出生日期
+          <input id="birth-date" name="birth_date" type="date" required>
+        </label>
+        <label>
+          出生时间
+          <input id="birth-time" name="birth_time" type="time" value="12:00" required>
+        </label>
+        <label>
+          性别
+          <select id="gender" name="gender" required>
+            <option value="female">女</option>
+            <option value="male">男</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+        <label class="question">
+          想觉察的问题
+          <textarea id="question" name="question" required>今日能量觉察</textarea>
+        </label>
+        <label>
+          API 密钥
+          <input id="api-key" name="api_key" type="password" autocomplete="off" placeholder="对应请求头 X-API-Key">
+        </label>
+      </div>
+      <button id="submit-button" class="primary" type="submit">
+        <span class="btn-orbit" aria-hidden="true"></span>
+        <span id="submit-label">开始觉察</span>
+      </button>
+    </form>
+    <section class="results" aria-live="polite">
+      <div class="results-head">
+        <h2>本次觉察</h2>
+        <span id="results-caption" class="quiet">能量状态</span>
+      </div>
+      <p id="activation-banner" class="activation-banner" hidden></p>
+      <p id="membership-note" class="membership-note" hidden></p>
+      <p id="empty-state" class="empty">提交后，能量状态诊断和完整宇宙能量指引会显示在这里。</p>
+      <div id="loading-state" class="loading" hidden>
+        <div class="halo" aria-hidden="true"><span></span><span></span><span></span></div>
+        <p id="loading-copy">正在链接宇宙能量场…</p>
+      </div>
+      <p id="error-state" class="error" hidden></p>
+      <div id="cards" class="cards" hidden></div>
+    </section>
   </main>
+  <div id="unlock-modal" class="modal" hidden>
+    <div class="modal-card glass" role="dialog" aria-modal="true" aria-labelledby="unlock-title">
+      <p class="brand">完整宇宙能量指引</p>
+      <h2 id="unlock-title">解锁完整宇宙能量指引</h2>
+      <p id="unlock-lead" class="quiet"></p>
+      <div class="plans">
+        <article class="plan glass">
+          <p class="plan-tag">一次看透</p>
+          <h3>单次深度破局报告</h3>
+          <p class="plan-copy">适合把一个问题一次看清。买断财富行动、破局锦囊和每日幸运指引，深度解析这一次的行动路径。</p>
+          <button class="plan-buy" type="button" data-plan="one_time">模拟开通</button>
+        </article>
+        <article class="plan glass">
+          <p class="plan-tag">灵活随心</p>
+          <h3>月度能量守护 VIP</h3>
+          <p class="plan-copy">按月陪伴，节奏可以随时调整。这个月的高阶维度、深度报告和状态复盘都为你开着。</p>
+          <button class="plan-buy" type="button" data-plan="monthly">模拟开通</button>
+        </article>
+        <article class="plan glass plan-featured">
+          <p class="plan-tag plan-tag-hot">🔥 最受欢迎 / 全年更值</p>
+          <p class="plan-save">一次覆盖全年，少 11 次续费操心</p>
+          <h3>年度能量守护 VIP</h3>
+          <p class="plan-copy">全年无限制的深度洞察与足迹复盘。比按月续费更从容，把陪伴一次留足。</p>
+          <button class="plan-buy" type="button" data-plan="yearly">模拟开通</button>
+        </article>
+      </div>
+      <p id="checkout-status" class="quiet"></p>
+      <div class="modal-actions">
+        <button id="unlock-close" class="ghost" type="button">先留在这里</button>
+      </div>
+    </div>
+  </div>
+  <div id="deep-buy-modal" class="modal" hidden>
+    <div class="modal-card glass deep-modal" role="dialog" aria-modal="true" aria-labelledby="deep-buy-title">
+      <p class="brand">单次买断</p>
+      <h2 id="deep-buy-title">八字命理深度测算</h2>
+      <p class="deep-price-lg">¥68<span style="font-size:1rem;letter-spacing:0.08em;"> / 篇</span></p>
+      <p class="quiet">一次买断一篇。报告按你的出生时刻排盘，包含下面四个核心模块，不和每日轻量觉察混在一起。</p>
+      <div class="deep-modules">
+        <span>性格底色</span>
+        <span>财富格局</span>
+        <span>事业破局</span>
+        <span>流年大运</span>
+      </div>
+      <p id="deep-buy-status" class="quiet"></p>
+      <div class="modal-actions">
+        <button id="deep-buy-close" class="ghost" type="button">先留在这里</button>
+        <button id="deep-buy" class="deep-buy" type="button">模拟购买 1 次额度</button>
+      </div>
+    </div>
+  </div>
   <script>
+    const TOKEN_KEY = "zenai.user_token";
     const form = document.querySelector("#guidance-form");
     const submitButton = document.querySelector("#submit-button");
+    const submitLabel = document.querySelector("#submit-label");
     const emptyState = document.querySelector("#empty-state");
     const loadingState = document.querySelector("#loading-state");
     const errorState = document.querySelector("#error-state");
     const cards = document.querySelector("#cards");
+    const membershipNote = document.querySelector("#membership-note");
+    const resultsCaption = document.querySelector("#results-caption");
+    const historyButton = document.querySelector("#history-button");
+    const historyPanel = document.querySelector("#history-panel");
+    const historyClose = document.querySelector("#history-close");
+    const historyLoading = document.querySelector("#history-loading");
+    const historyEmpty = document.querySelector("#history-empty");
+    const historyExpiry = document.querySelector("#history-expiry");
+    const historyError = document.querySelector("#history-error");
+    const historyList = document.querySelector("#history-list");
+    const unlockModal = document.querySelector("#unlock-modal");
+    const unlockLead = document.querySelector("#unlock-lead");
+    const unlockTitle = document.querySelector("#unlock-title");
+    const activationBanner = document.querySelector("#activation-banner");
+    const unlockClose = document.querySelector("#unlock-close");
+    const checkoutStatus = document.querySelector("#checkout-status");
+    const deepStatus = document.querySelector("#deep-status");
+    const deepHint = document.querySelector("#deep-hint");
+    const deepOpen = document.querySelector("#deep-open");
+    const deepReport = document.querySelector("#deep-report");
+    const deepChartNote = document.querySelector("#deep-chart-note");
+    const deepPillars = document.querySelector("#deep-pillars");
+    const deepChapters = document.querySelector("#deep-chapters");
+    const deepBuyModal = document.querySelector("#deep-buy-modal");
+    const deepBuyStatus = document.querySelector("#deep-buy-status");
+    const deepBuy = document.querySelector("#deep-buy");
+    const deepBuyClose = document.querySelector("#deep-buy-close");
+    const deepAccount = { tier: "", credits: 0, ready: false };
 
     const cardFields = [
-      ["core_energy", "核心能量"],
-      ["career_guidance", "事业指引"],
-      ["relationship_advice", "关系建议"],
+      ["core_energy", "核心能量", "M9 2.5v2.2M9 13.3V15.5M2.5 9h2.2M13.3 9H15.5M4.4 4.4l1.6 1.6M12 12l1.6 1.6M13.6 4.4 12 6M6 12 4.4 13.6M9 6.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"],
+      ["career_guidance", "事业觉察", "M9 2.2 10.4 6.4 15 6.6 11.6 9.8 12.6 14.2 9 11.6 5.4 14.2 6.4 9.8 3 6.6 7.6 6.4 9 2.2Z"],
+      ["relationship_advice", "关系觉察", "M5.2 8.2a2.3 2.3 0 1 1 3.2-3.2L9 5.6l.6-.6a2.3 2.3 0 1 1 3.2 3.2L9 12.2 5.2 8.2Z"],
+      ["wealth_flow", "财富行动", "M3 9c2.2-3.2 4.2 3.2 6.4 0S13.2 5.8 15 9M3.4 11.2h9.2a2 2 0 0 1 0 4H5.2"],
+      ["action_tips", "破局锦囊", "M3.5 9.2 7.2 12.8 14.5 4.8"],
+      ["lucky_elements", "每日幸运指引", "M11.4 3.1a5.4 5.4 0 1 0 3.4 9.4 4.3 4.3 0 0 1-3.4-9.4Z"],
     ];
+    const fieldTitles = Object.fromEntries(cardFields.map(([key, title]) => [key, title]));
+
+    function requestHeaders(json) {
+      const headers = {};
+      if (json) headers["Content-Type"] = "application/json";
+      const apiKey = document.querySelector("#api-key").value.trim();
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (apiKey) headers["X-API-Key"] = apiKey;
+      if (token) headers["X-User-Token"] = token;
+      return headers;
+    }
 
     function setView(mode) {
       emptyState.hidden = mode !== "empty";
@@ -229,7 +882,8 @@
       errorState.hidden = mode !== "error";
       cards.hidden = mode !== "success";
       submitButton.disabled = mode === "loading";
-      submitButton.textContent = mode === "loading" ? "解读中…" : "开始解读";
+      submitButton.classList.toggle("is-loading", mode === "loading");
+      submitLabel.textContent = mode === "loading" ? "链接中…" : "开始觉察";
     }
 
     function showError(message) {
@@ -237,54 +891,585 @@
       setView("error");
     }
 
-    function showGuidance(data) {
-      cards.replaceChildren();
-      cardFields.forEach(([key, title]) => {
-        const article = document.createElement("article");
-        const heading = document.createElement("h3");
-        const body = document.createElement("p");
-        heading.textContent = title;
-        body.textContent = data[key] || "（未返回内容）";
-        article.append(heading, body);
-        cards.append(article);
-      });
-      setView("success");
-    }
-
     function errorMessage(status, detail) {
       if (status === 401) return "未授权：请检查 API 密钥是否正确。";
       if (typeof detail === "string" && detail) return detail;
-      if (Array.isArray(detail)) {
-        return detail.map((item) => item.msg || "请求参数有误").join("；");
-      }
+      if (Array.isArray(detail)) return detail.map((item) => item.msg || "请求参数有误").join("；");
       return "请求失败（" + status + "）";
     }
+
+    function iconSvg(path) {
+      const badge = document.createElement("div");
+      badge.className = "badge";
+      badge.innerHTML = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="' + path + '"/></svg>';
+      return badge;
+    }
+
+    function openUnlock(fieldKey) {
+      const leads = {
+        wealth_flow: "财富行动还藏在后面。解锁完整宇宙能量指引，看清资源从哪里轻轻流走、哪里值得留下。",
+        action_tips: "破局锦囊会把今天的卡点收成两三件做得到的小事。深度解析行动路径，从这里继续。",
+        lucky_elements: "每日幸运指引是一个温柔的注意力锚点。打开完整版，给今天一个颜色、一个数字、一分钟的仪式。",
+        energy_history: "你的足迹还在。月度与年度守护会按时间留住每一次觉察，方便你回头看见自己的节奏。",
+      };
+      unlockTitle.textContent = fieldKey === "energy_history"
+        ? "把足迹留在时间里"
+        : "解锁完整宇宙能量指引";
+      unlockLead.textContent = leads[fieldKey]
+        || "「" + (fieldTitles[fieldKey] || "这一层") + "」属于完整版。前三个维度已经帮你看清状态，后面是财富、行动与每日指引。";
+      unlockModal.hidden = false;
+      document.body.classList.add("modal-open");
+      checkoutStatus.textContent = "";
+      unlockClose.focus();
+    }
+
+    function closeUnlock() {
+      unlockModal.hidden = true;
+      document.body.classList.remove("modal-open");
+    }
+
+    function formatDay(date) {
+      return date.getFullYear() + "-"
+        + String(date.getMonth() + 1).padStart(2, "0") + "-"
+        + String(date.getDate()).padStart(2, "0");
+    }
+
+    function expiryLabel(membership) {
+      if (!membership || !membership.expires_at) return "";
+      const date = new Date(membership.expires_at);
+      if (Number.isNaN(date.getTime())) return "";
+      const text = formatDay(date);
+      const tier = membership.tier || membership.membership_tier || "";
+      const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
+      if (tier === "yearly_subscriber" || tier === "monthly_subscriber") {
+        const name = tier === "yearly_subscriber" ? "年费会员" : "月费会员";
+        const remain = days > 0 ? "，还剩 " + days + " 天" : "";
+        return "✨ " + name + "进行中（将于 " + text + " 到期" + remain + "）";
+      }
+      if (tier === "free" && date.getTime() < Date.now()) {
+        return "这次守护已于 " + text + " 轻轻到期";
+      }
+      return "";
+    }
+
+    function tierPill(membership) {
+      const tier = (membership && (membership.tier || membership.membership_tier)) || "";
+      if (tier === "yearly_subscriber") return ["年费会员", false];
+      if (tier === "monthly_subscriber") return ["月费会员", false];
+      if (tier === "one_time_pro") return ["单次深度报告", false];
+      return ["免费层", true];
+    }
+
+    function showHistoryExpiry(source) {
+      const label = expiryLabel(source);
+      historyExpiry.hidden = !label;
+      historyExpiry.textContent = label;
+    }
+
+    function showMembership(membership) {
+      if (!membership) {
+        membershipNote.hidden = true;
+        resultsCaption.textContent = "能量状态";
+        return;
+      }
+      const [pillText, isFree] = tierPill(membership);
+      resultsCaption.textContent = pillText;
+      membershipNote.hidden = false;
+      membershipNote.replaceChildren();
+      const pill = document.createElement("span");
+      pill.className = "tier-pill" + (isFree ? " is-free" : "");
+      pill.textContent = pillText;
+      membershipNote.append(pill);
+      const message = document.createElement("span");
+      message.textContent = membership.message || "";
+      membershipNote.append(message);
+      const expiry = expiryLabel(membership);
+      if (expiry) {
+        const line = document.createElement("span");
+        line.className = "expiry-line";
+        line.textContent = expiry;
+        membershipNote.append(line);
+      } else if (membership.tier === "one_time_pro") {
+        const line = document.createElement("span");
+        line.className = "expiry-line";
+        line.textContent = "✨ 单次深度报告已为你留着";
+        membershipNote.append(line);
+      }
+      if (isFree) {
+        const link = document.createElement("button");
+        link.type = "button";
+        link.className = "upgrade-cta";
+        link.textContent = "升级 Pro / 解锁完整版";
+        link.addEventListener("click", () => openUnlock("wealth_flow"));
+        membershipNote.append(link);
+      }
+    }
+
+    function showGuidance(data, membership) {
+      const locked = new Set((membership && membership.locked_fields) || []);
+      cards.replaceChildren();
+      cardFields.forEach(([key, title, icon]) => {
+        const article = document.createElement("article");
+        article.className = "glass";
+        if (locked.has(key)) {
+          article.classList.add("is-locked");
+          const hit = document.createElement("button");
+          hit.type = "button";
+          hit.className = "lock-hit";
+          const mark = document.createElement("div");
+          mark.className = "card-mark";
+          const heading = document.createElement("h3");
+          heading.textContent = title;
+          mark.append(iconSvg(icon), heading);
+          const copy = document.createElement("p");
+          copy.className = "lock-copy";
+          const teasers = {
+            wealth_flow: "解锁完整宇宙能量指引，看清财富如何流动。",
+            action_tips: "深度解析破局锦囊，把卡点收成做得到的小事。",
+            lucky_elements: "打开每日幸运指引，给今天一个温柔的锚点。",
+          };
+          copy.textContent = teasers[key] || "这一层属于完整宇宙能量指引。";
+          const hint = document.createElement("p");
+          hint.className = "lock-hint";
+          hint.textContent = "轻触，解锁完整版";
+          hit.append(mark, copy, hint);
+          hit.addEventListener("click", () => openUnlock(key));
+          article.append(hit);
+        } else {
+          const mark = document.createElement("div");
+          mark.className = "card-mark";
+          const heading = document.createElement("h3");
+          const body = document.createElement("p");
+          heading.textContent = title;
+          body.textContent = data[key] || "（未返回内容）";
+          mark.append(iconSvg(icon), heading);
+          article.append(mark, body);
+        }
+        cards.append(article);
+      });
+      showMembership(membership);
+      setView("success");
+    }
+
+    function formatWhen(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value || "");
+      return new Intl.DateTimeFormat("zh-CN", {
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(date);
+    }
+
+    function setHistoryMode(mode) {
+      historyLoading.hidden = mode !== "loading";
+      historyEmpty.hidden = mode !== "empty";
+      historyError.hidden = mode !== "error";
+      historyList.hidden = mode !== "ready";
+    }
+
+    function renderHistory(archive) {
+      const membership = archive.membership || {};
+      const locked = new Set(membership.locked_fields || []);
+      historyList.replaceChildren();
+      (archive.data || []).forEach((reading) => {
+        const item = document.createElement("li");
+        item.className = "glass";
+        const when = document.createElement("p");
+        when.className = "when";
+        when.textContent = formatWhen(reading.created_at);
+        const heading = document.createElement("h3");
+        heading.textContent = reading.question || "能量觉察";
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = [reading.birth_date, reading.birth_time].filter(Boolean).join(" · ");
+        const snippets = document.createElement("div");
+        snippets.className = "snippets";
+        cardFields.forEach(([key, title]) => {
+          if (!reading[key]) return;
+          const line = document.createElement("p");
+          const name = document.createElement("strong");
+          name.textContent = title + "  ";
+          line.append(name, document.createTextNode(reading[key]));
+          snippets.append(line);
+        });
+        item.append(when, heading, meta, snippets);
+        if (locked.size) {
+          const hint = document.createElement("button");
+          hint.type = "button";
+          hint.className = "text-link";
+          hint.textContent = "还有 " + locked.size + " 项完整宇宙能量指引未打开";
+          hint.addEventListener("click", () => openUnlock(locked.values().next().value));
+          item.append(hint);
+        }
+        historyList.append(item);
+      });
+      showHistoryExpiry(membership);
+      showMembership(membership);
+      if (archive.user) {
+        noteDeepAccount(membership.tier || archive.user.membership_tier, archive.user.one_time_credits || 0);
+      }
+      setHistoryMode(historyList.childElementCount ? "ready" : "empty");
+      if (!historyList.childElementCount) {
+        historyEmpty.textContent = "还没有可以复盘的觉察。完成一次能量觉察后，记录会留在这里。";
+      }
+    }
+
+    async function loadHistory() {
+      historyPanel.hidden = false;
+      historyButton.setAttribute("aria-expanded", "true");
+      historyPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        historyEmpty.textContent = "还没有状态复盘。先完成一次能量觉察，这里会记住你的节奏。";
+        setHistoryMode("empty");
+        return;
+      }
+      historyExpiry.hidden = true;
+      setHistoryMode("loading");
+      try {
+        const response = await fetch("/api/energy-history?user_token=" + encodeURIComponent(token), {
+          headers: requestHeaders(false),
+        });
+        const payload = await response.json().catch(() => ({}));
+        const detail = payload.detail;
+        if (response.status === 403 && detail && detail.code === "history_locked") {
+          const expired = detail.tier === "free" && detail.expires_at;
+          historyEmpty.textContent = expired
+            ? "这次守护已经到站。重新开启月度或年度陪伴，之前的足迹会再为你展开。"
+            : "这些觉察还在。开通月度或年度守护，就能顺着时间回看每一次状态。";
+          showHistoryExpiry(detail);
+          noteDeepAccount(detail.tier || "free", detail.one_time_credits || 0);
+          if (!detail.tier || detail.tier === "free") {
+            showMembership({
+              tier: "free",
+              access: "foundation",
+              expires_at: detail.expires_at || null,
+              message: expired
+                ? "核心能量、事业觉察和关系觉察仍然为你留着。"
+                : "前三个维度已经完整开放，后面是更深的宇宙能量指引。",
+            });
+          }
+          setHistoryMode("empty");
+          openUnlock("energy_history");
+          return;
+        }
+        if (!response.ok) {
+          historyError.textContent = errorMessage(response.status, detail);
+          setHistoryMode("error");
+          return;
+        }
+        renderHistory(payload);
+      } catch (error) {
+        historyError.textContent = "网络异常，暂时无法打开状态复盘。";
+        setHistoryMode("error");
+      }
+    }
+
+    function closeHistory() {
+      historyPanel.hidden = true;
+      historyButton.setAttribute("aria-expanded", "false");
+    }
+
+    submitButton.addEventListener("pointerdown", () => {
+      submitButton.classList.remove("is-glow");
+      void submitButton.offsetWidth;
+      submitButton.classList.add("is-glow");
+    });
+
+    historyButton.addEventListener("click", loadHistory);
+    historyClose.addEventListener("click", closeHistory);
+    unlockClose.addEventListener("click", closeUnlock);
+    document.querySelectorAll("[data-plan]").forEach((button) => {
+      button.addEventListener("click", () => mockCheckout(button.dataset.plan));
+    });
+    unlockModal.addEventListener("click", (event) => {
+      if (event.target === unlockModal) closeUnlock();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !deepBuyModal.hidden) closeDeepBuy();
+      if (event.key === "Escape" && !unlockModal.hidden) closeUnlock();
+    });
+
+    async function mockCheckout(planType) {
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        checkoutStatus.textContent = "请先完成一次能量觉察，方案才会记到你的档案上。";
+        return;
+      }
+      const buttons = [...document.querySelectorAll("[data-plan]")];
+      buttons.forEach((button) => { button.disabled = true; });
+      const opening = {
+        one_time: "正在为你展开这一次的深度报告…",
+        monthly: "正在点亮这个月的能量守护…",
+        yearly: "正在铺开全年的能量守护…",
+      };
+      checkoutStatus.textContent = opening[planType] || "正在为你点亮能量护盾…";
+      try {
+        const response = await fetch("/api/mock-checkout", {
+          method: "POST",
+          headers: requestHeaders(true),
+          body: JSON.stringify({ plan_type: planType, user_token: token }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          checkoutStatus.textContent = errorMessage(response.status, payload.detail);
+          return;
+        }
+        if (payload.user_token) localStorage.setItem(TOKEN_KEY, payload.user_token);
+        if (payload.membership) {
+          showMembership(payload.membership);
+          noteDeepAccount(payload.membership.tier);
+        }
+        const cheers = {
+          one_time: "🎉 恭喜！这一次的深度破局报告已经为你打开",
+          monthly: "🎉 恭喜！专属能量护盾已激活，这个月都有人陪着你",
+          yearly: "🎉 恭喜！专属能量护盾已激活，全年的洞察与足迹都留给你",
+        };
+        activationBanner.hidden = false;
+        activationBanner.textContent = cheers[planType] || "🎉 恭喜！专属能量护盾已激活";
+        closeUnlock();
+        if (document.querySelector("#birth-date").value) form.requestSubmit();
+      } catch (error) {
+        checkoutStatus.textContent = "网络异常，暂时无法开通。";
+      } finally {
+        buttons.forEach((button) => { button.disabled = false; });
+      }
+    }
+
+    function directDeepAccess(tier) {
+      return tier === "yearly_subscriber" || tier === "monthly_subscriber";
+    }
+
+    function renderDeepAccount() {
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        deepStatus.textContent = "未解锁 / 点击深度测算";
+        return;
+      }
+      const credits = deepAccount.credits || 0;
+      if (deepAccount.tier === "yearly_subscriber") {
+        deepStatus.textContent = credits > 0
+          ? "年卡会员，可直接生成深度报告 · 另有额度 " + credits + " 次"
+          : "年卡会员，可直接生成深度报告";
+        return;
+      }
+      if (deepAccount.tier === "monthly_subscriber") {
+        deepStatus.textContent = credits > 0
+          ? "月卡会员，可直接生成深度报告 · 另有额度 " + credits + " 次"
+          : "月卡会员，可直接生成深度报告";
+        return;
+      }
+      deepStatus.textContent = credits > 0
+        ? "当前剩余深度测算额度：" + credits + " 次"
+        : "未解锁 / 点击深度测算";
+    }
+
+    function noteDeepAccount(tier, credits) {
+      if (typeof tier === "string" && tier) deepAccount.tier = tier;
+      if (typeof credits === "number") deepAccount.credits = credits;
+      deepAccount.ready = true;
+      renderDeepAccount();
+    }
+
+    function openDeepBuy() {
+      deepBuyStatus.textContent = "";
+      deepBuyModal.hidden = false;
+      document.body.classList.add("modal-open");
+    }
+
+    function closeDeepBuy() {
+      deepBuyModal.hidden = true;
+      if (unlockModal.hidden) document.body.classList.remove("modal-open");
+    }
+
+    function renderDeepReport(payload) {
+      const chart = payload.chart || {};
+      const pillars = chart.pillars || {};
+      deepChartNote.textContent = (chart.gender_label || "") + " · 日主 " + (chart.day_master || "")
+        + " · " + ((chart.strength && chart.strength.label) || "");
+      deepPillars.replaceChildren();
+      [["year", "年柱"], ["month", "月柱"], ["day", "日柱"], ["hour", "时柱"]].forEach(([key, label]) => {
+        const pillar = pillars[key];
+        if (!pillar) return;
+        const article = document.createElement("article");
+        const name = document.createElement("span");
+        name.textContent = label;
+        const gz = document.createElement("strong");
+        gz.textContent = pillar.gan_zhi;
+        const role = document.createElement("span");
+        role.textContent = pillar.shi_shen;
+        article.append(name, gz, role);
+        deepPillars.append(article);
+      });
+      deepChapters.replaceChildren();
+      (payload.chapters || []).forEach((chapter) => {
+        const block = document.createElement("article");
+        block.className = "deep-chapter";
+        const heading = document.createElement("h3");
+        heading.textContent = chapter.title;
+        const body = document.createElement("p");
+        body.textContent = chapter.body;
+        block.append(heading, body);
+        deepChapters.append(block);
+      });
+      deepReport.hidden = false;
+      noteDeepAccount(deepAccount.tier, payload.one_time_credits);
+    }
+
+    async function refreshDeepAccount() {
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        noteDeepAccount("", 0);
+        return;
+      }
+      try {
+        const response = await fetch("/api/energy-history?user_token=" + encodeURIComponent(token), {
+          headers: requestHeaders(false),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.user) {
+          noteDeepAccount(
+            (payload.membership && payload.membership.tier) || payload.user.membership_tier,
+            payload.user.one_time_credits || 0
+          );
+          return;
+        }
+        if (response.status === 403 && payload.detail) {
+          noteDeepAccount(payload.detail.tier || "free", payload.detail.one_time_credits || 0);
+          return;
+        }
+      } catch (error) {
+        deepHint.textContent = "权益状态暂时没有读到，仍可以点击尝试。";
+      }
+      deepAccount.ready = true;
+      renderDeepAccount();
+    }
+
+    async function requestDeepReport() {
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        deepHint.textContent = "请先完成一次能量觉察，深度测算才会记到你的档案上。";
+        return;
+      }
+      if (!deepAccount.ready) await refreshDeepAccount();
+      if (!directDeepAccess(deepAccount.tier) && !(deepAccount.credits > 0)) {
+        openDeepBuy();
+        return;
+      }
+      const birthDate = document.querySelector("#birth-date").value;
+      const birthTime = document.querySelector("#birth-time").value;
+      if (!birthDate || !birthTime) {
+        deepHint.textContent = "先填写出生日期和时间，这张盘才排得出来。";
+        document.querySelector("#birth-date").focus();
+        return;
+      }
+      deepOpen.disabled = true;
+      deepHint.textContent = "正在排布四柱、十神与大运…";
+      try {
+        const response = await fetch("/api/deep-report", {
+          method: "POST",
+          headers: requestHeaders(true),
+          body: JSON.stringify({
+            birth_date: birthDate,
+            birth_time: birthTime,
+            gender: document.querySelector("#gender").value,
+            question: document.querySelector("#question").value.trim(),
+            user_token: token,
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 403 && payload.detail && payload.detail.code === "deep_report_locked") {
+          noteDeepAccount(deepAccount.tier, payload.detail.one_time_credits || 0);
+          deepHint.textContent = payload.detail.message || "";
+          openDeepBuy();
+          return;
+        }
+        if (!response.ok) {
+          deepHint.textContent = errorMessage(response.status, payload.detail);
+          return;
+        }
+        deepHint.textContent = payload.access_via === "subscription"
+          ? "已用会员特权生成，没有扣减单次额度。"
+          : "已使用 1 次额度。";
+        renderDeepReport(payload);
+        deepReport.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (error) {
+        deepHint.textContent = "网络异常，暂时无法完成深度排盘。";
+      } finally {
+        deepOpen.disabled = false;
+      }
+    }
+
+    async function buyDeepCredit() {
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      if (!token) {
+        deepBuyStatus.textContent = "请先完成一次能量觉察，额度才会记到你的档案上。";
+        return;
+      }
+      deepBuy.disabled = true;
+      deepBuyStatus.textContent = "正在写入 1 次深度测算额度…";
+      try {
+        const response = await fetch("/api/mock-buy-deep-credit", {
+          method: "POST",
+          headers: requestHeaders(true),
+          body: JSON.stringify({ quantity: 1, user_token: token }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          deepBuyStatus.textContent = errorMessage(response.status, payload.detail);
+          return;
+        }
+        noteDeepAccount(payload.membership && payload.membership.tier, payload.one_time_credits);
+        closeDeepBuy();
+        deepHint.textContent = "额度已到账。正在为你排盘…";
+        await requestDeepReport();
+      } catch (error) {
+        deepBuyStatus.textContent = "网络异常，暂时无法购买额度。";
+      } finally {
+        deepBuy.disabled = false;
+      }
+    }
+
+    deepOpen.addEventListener("click", requestDeepReport);
+    deepBuy.addEventListener("click", buyDeepCredit);
+    deepBuyClose.addEventListener("click", closeDeepBuy);
+    deepBuyModal.addEventListener("click", (event) => {
+      if (event.target === deepBuyModal) closeDeepBuy();
+    });
+    refreshDeepAccount();
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       setView("loading");
-      const apiKey = document.querySelector("#api-key").value.trim();
-      const headers = { "Content-Type": "application/json" };
-      if (apiKey) headers["X-API-Key"] = apiKey;
+      const token = localStorage.getItem(TOKEN_KEY) || "";
+      const body = {
+        birth_date: document.querySelector("#birth-date").value,
+        birth_time: document.querySelector("#birth-time").value,
+        gender: document.querySelector("#gender").value,
+        question: document.querySelector("#question").value.trim(),
+      };
+      if (token) body.user_token = token;
       try {
         const response = await fetch("/api/energy-guidance", {
           method: "POST",
-          headers,
-          body: JSON.stringify({
-            birth_date: document.querySelector("#birth-date").value,
-            birth_time: document.querySelector("#birth-time").value,
-            gender: document.querySelector("#gender").value,
-            question: document.querySelector("#question").value.trim(),
-          }),
+          headers: requestHeaders(true),
+          body: JSON.stringify(body),
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
           showError(errorMessage(response.status, payload.detail));
           return;
         }
-        showGuidance(payload.data || {});
+        if (payload.user_token) localStorage.setItem(TOKEN_KEY, payload.user_token);
+        showGuidance(payload.data || {}, payload.membership || null);
+        noteDeepAccount(
+          payload.membership && payload.membership.tier,
+          payload.one_time_credits
+        );
       } catch (error) {
-        showError("网络异常，暂时无法连接解读服务。");
+        showError("网络异常，暂时无法完成这次能量觉察。");
       }
     });
   </script>

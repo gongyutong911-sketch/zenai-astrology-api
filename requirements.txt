@@ -6,3 +6,5 @@ openai
 tenacity
 lunar-python
 pytest
+pytest-cov
+sqlalchemy
