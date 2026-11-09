@@ -375,6 +375,51 @@ def _stars(chart: dict, names: set) -> list:
     return hits
 
 
+def ensure_chart_complete(chart: dict) -> None:
+    """四柱、日主和旺衰缺一则视为空盘，不能当成一份可交付的深度报告。"""
+    if not isinstance(chart, dict):
+        raise ValueError("排盘结果不完整")
+    pillars = chart.get("pillars")
+    if not isinstance(pillars, dict):
+        raise ValueError("排盘结果不完整")
+    for name in ("year", "month", "day", "hour"):
+        pillar = pillars.get(name)
+        if not isinstance(pillar, dict):
+            raise ValueError("排盘结果不完整")
+        gan_zhi = pillar.get("gan_zhi")
+        if not isinstance(gan_zhi, str) or len(gan_zhi) != 2:
+            raise ValueError("排盘结果不完整")
+        if gan_zhi[0] not in GAN or gan_zhi[1] not in ZHI:
+            raise ValueError("排盘结果不完整")
+        if pillar.get("gan") != gan_zhi[0] or pillar.get("zhi") != gan_zhi[1]:
+            raise ValueError("排盘结果不完整")
+        if pillar.get("wu_xing") != GAN_WU_XING[gan_zhi[0]]:
+            raise ValueError("排盘结果不完整")
+    if not isinstance(chart.get("day_master"), str) or not chart["day_master"].strip():
+        raise ValueError("排盘结果不完整")
+    for key in ("clock_time", "true_solar_time", "solar"):
+        if not isinstance(chart.get(key), str) or not chart[key].strip():
+            raise ValueError("排盘结果不完整")
+    strength = chart.get("strength")
+    if not isinstance(strength, dict) or strength.get("label") not in {"身旺", "身弱", "中和"}:
+        raise ValueError("排盘结果不完整")
+
+
+def ensure_report_complete(report: dict) -> None:
+    ensure_chart_complete(report.get("chart"))
+    chapters = report.get("chapters")
+    expected = ("personality", "wealth", "career", "luck_cycles")
+    if not isinstance(chapters, list) or [item.get("key") if isinstance(item, dict) else None for item in chapters] != list(expected):
+        raise ValueError("排盘结果不完整")
+    for item in chapters:
+        title = item.get("title")
+        body = item.get("body")
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("排盘结果不完整")
+        if not isinstance(body, str) or not body.strip():
+            raise ValueError("排盘结果不完整")
+
+
 def compose_deep_report(
     birth_date: str,
     birth_time: str,
@@ -386,15 +431,21 @@ def compose_deep_report(
     zi_hour_mode: str = ZI_HOUR_EARLY,
 ) -> dict:
     """把已经排好的盘写成四个章节。章节只解释盘里的干支、十神和旺衰。"""
-    chart = cast_chart(
-        birth_date,
-        birth_time,
-        gender,
-        longitude=longitude,
-        latitude=latitude,
-        birth_city=birth_city,
-        zi_hour_mode=zi_hour_mode,
-    )
+    try:
+        chart = cast_chart(
+            birth_date,
+            birth_time,
+            gender,
+            longitude=longitude,
+            latitude=latitude,
+            birth_city=birth_city,
+            zi_hour_mode=zi_hour_mode,
+        )
+        ensure_chart_complete(chart)
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError("排盘结果不完整") from exc
     pillars = chart["pillars"]
     day = pillars["day"]
     strength = chart["strength"]
@@ -459,7 +510,9 @@ def compose_deep_report(
             ),
         },
     ]
-    return {"chart": chart, "chapters": chapters}
+    report = {"chart": chart, "chapters": chapters}
+    ensure_report_complete(report)
+    return report
 
 
 def run_bazi(year, month, day, hour, minute=0, gender=1, longitude=None, zi_hour_mode=ZI_HOUR_EARLY):

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import time
+from typing import Optional
 
 from openai import (
     APIConnectionError,
@@ -14,15 +15,34 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 logger = logging.getLogger(__name__)
 
-# 从环境变量中读取密钥和可选的自定义 Base URL（兼容标准 OpenAI 协议及中转网关）
-api_key = os.getenv("OPENAI_API_KEY")
-base_url = os.getenv("OPENAI_BASE_URL")  # 如果你有自定义的中转地址，会自动读取；没有则留空访问默认
+# Instant 履约只使用这一组变量，不回退到 OPENAI_ADMIN_KEY 或其他 Bot 密钥。
+INSTANT_API_KEY_ENV = "OPENAI_API_KEY"
+INSTANT_BASE_URL_ENV = "OPENAI_BASE_URL"
+INSTANT_MODEL_ENV = "OPENAI_MODEL"
+DEFAULT_MODEL = "deepseek-flash"
 
-# 初始化 OpenAI 客户端
-client = OpenAI(
-    api_key=api_key,
-    base_url=base_url if base_url else None,
-)
+_client = None
+_client_signature = None
+
+
+class GuidanceRateLimited(Exception):
+    """上游限流。不再自动重试，避免把 Instant 配额打穿。"""
+
+    def __init__(self, retry_after: Optional[float] = None):
+        super().__init__("rate_limited")
+        self.retry_after = retry_after
+
+
+class GuidanceUnavailable(Exception):
+    """连接、超时或上游 5xx 在有限次重试后仍失败。"""
+
+    def __init__(self, reason: str = "unavailable"):
+        super().__init__(reason)
+        self.reason = reason
+
+
+class GuidanceOutputError(ValueError):
+    """模型返回空内容或无法解析的 JSON。"""
 
 GUIDANCE_FIELDS = (
     "core_energy",
@@ -36,8 +56,8 @@ FREE_FIELDS = ("core_energy", "career_guidance", "relationship_advice")
 DAILY_SIGN_FIELDS = FREE_FIELDS
 DEPTH_DAILY = "foundation"
 DEPTH_COACHING = "full_coaching"
-# 网络抖动、超时、限流和服务端 5xx 才重试；参数错误不会因为重试而成功。
-RETRYABLE_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError, InternalServerError)
+# 网络抖动、超时和服务端 5xx 才重试。429 会继续消耗 Instant 配额，所以不重试。
+RETRYABLE_ERRORS = (APIConnectionError, APITimeoutError, InternalServerError, GuidanceOutputError)
 
 
 def _log_retry(retry_state) -> None:
@@ -51,6 +71,55 @@ def _log_retry(retry_state) -> None:
     )
 
 
+def _reset_client_cache() -> None:
+    global _client, _client_signature
+    _client = None
+    _client_signature = None
+
+
+def _instant_credentials() -> tuple:
+    """只读取 Instant 履约自己的密钥和网关，忽略管理密钥与其他 Bot 密钥。"""
+    api_key = os.getenv(INSTANT_API_KEY_ENV, "").strip()
+    base_url = os.getenv(INSTANT_BASE_URL_ENV, "").strip() or None
+    return api_key, base_url
+
+
+def _openai_client() -> OpenAI:
+    global _client, _client_signature
+    api_key, base_url = _instant_credentials()
+    signature = (api_key, base_url)
+    if _client is not None and _client_signature == signature:
+        return _client
+    if not api_key:
+        raise GuidanceUnavailable("missing_api_key")
+    # max_retries=0：官方 SDK 默认会重试 429。限流交给上面的分类，不在客户端里再打两次。
+    # admin_api_key 显式置空，避免 OPENAI_ADMIN_KEY 被当成这只客户端的凭证。
+    kwargs = {"api_key": api_key, "admin_api_key": "", "max_retries": 0}
+    if base_url:
+        kwargs["base_url"] = base_url
+    _client = OpenAI(**kwargs)
+    _client_signature = signature
+    return _client
+
+
+def _retry_after_seconds(exc) -> Optional[float]:
+    response = getattr(exc, "response", None)
+    headers = getattr(response, "headers", None)
+    if headers is None:
+        return None
+    try:
+        raw = headers.get("retry-after")
+    except Exception:
+        return None
+    try:
+        seconds = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if seconds < 0 or seconds > 120:
+        return None
+    return seconds
+
+
 @retry(
     retry=retry_if_exception_type(RETRYABLE_ERRORS),
     wait=wait_exponential(multiplier=1, min=1, max=8),
@@ -58,19 +127,26 @@ def _log_retry(retry_state) -> None:
     before_sleep=_log_retry,
     reraise=True,
 )
-def _create_guidance_completion(messages: list[dict]) -> str:
-    """调用标准 Chat Completions，并在可恢复错误上按指数退避重试。"""
-    model = os.getenv("OPENAI_MODEL", "deepseek-flash")
+def _complete_guidance(messages: list[dict], fields: tuple) -> dict:
+    """调用标准 Chat Completions。空响应和坏 JSON 会再试，限流不会。"""
+    model = os.getenv(INSTANT_MODEL_ENV, DEFAULT_MODEL)
     started = time.perf_counter()
     logger.info("model_request_start model=%s", model)
     try:
-        response = client.chat.completions.create(
+        response = _openai_client().chat.completions.create(
             model=model,
             messages=messages,
             temperature=0.7,
             response_format={"type": "json_object"},
         )
-    except Exception as exc:
+    except RateLimitError as exc:
+        logger.warning(
+            "model_request_rate_limited model=%s elapsed_ms=%.1f",
+            model,
+            (time.perf_counter() - started) * 1000,
+        )
+        raise GuidanceRateLimited(_retry_after_seconds(exc)) from None
+    except RETRYABLE_ERRORS as exc:
         logger.warning(
             "model_request_failed model=%s elapsed_ms=%.1f error=%s",
             model,
@@ -78,15 +154,32 @@ def _create_guidance_completion(messages: list[dict]) -> str:
             type(exc).__name__,
         )
         raise
-    content = response.choices[0].message.content
-    if not content:
-        raise ValueError("模型未返回内容")
+    except Exception as exc:
+        logger.warning(
+            "model_request_failed model=%s elapsed_ms=%.1f error=%s",
+            model,
+            (time.perf_counter() - started) * 1000,
+            type(exc).__name__,
+        )
+        raise GuidanceUnavailable(type(exc).__name__) from None
+    choices = getattr(response, "choices", None) or []
+    content = None
+    if choices and getattr(choices[0], "message", None) is not None:
+        content = choices[0].message.content
+    if not isinstance(content, str) or not content.strip():
+        raise GuidanceOutputError("模型未返回内容")
+    try:
+        guidance = _parse_guidance(content, fields)
+    except GuidanceOutputError:
+        raise
+    except ValueError as exc:
+        raise GuidanceOutputError(str(exc)) from exc
     logger.info(
         "model_request_done model=%s elapsed_ms=%.1f",
         model,
         (time.perf_counter() - started) * 1000,
     )
-    return content
+    return guidance
 
 
 def _parse_guidance(content: str, fields: tuple = GUIDANCE_FIELDS) -> dict[str, str]:
@@ -95,9 +188,12 @@ def _parse_guidance(content: str, fields: tuple = GUIDANCE_FIELDS) -> dict[str, 
     if text.startswith("```"):
         text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
 
-    payload = json.loads(text)
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise GuidanceOutputError("模型返回的 JSON 无法解析") from exc
     if not isinstance(payload, dict):
-        raise ValueError("模型返回的 JSON 不是对象")
+        raise GuidanceOutputError("模型返回的 JSON 不是对象")
 
     missing = [
         field
@@ -105,7 +201,7 @@ def _parse_guidance(content: str, fields: tuple = GUIDANCE_FIELDS) -> dict[str, 
         if not isinstance(payload.get(field), str) or not payload[field].strip()
     ]
     if missing:
-        raise ValueError(f"模型返回缺少字段: {', '.join(missing)}")
+        raise GuidanceOutputError(f"模型返回缺少字段: {', '.join(missing)}")
 
     return {field: payload[field].strip() for field in fields}
 
@@ -184,11 +280,31 @@ def get_astrology_energy_guidance(
     messages = _guidance_messages(birth_date, birth_time, gender, question, depth)
     started = time.perf_counter()
     try:
-        guidance = _parse_guidance(_create_guidance_completion(messages), fields)
-    except Exception:
-        logger.exception(
-            "model_call_exhausted elapsed_ms=%.1f",
+        guidance = _complete_guidance(messages, fields)
+    except GuidanceRateLimited:
+        logger.warning(
+            "model_call_rate_limited elapsed_ms=%.1f",
             (time.perf_counter() - started) * 1000,
+        )
+        raise
+    except GuidanceOutputError:
+        logger.warning(
+            "model_call_unusable elapsed_ms=%.1f",
+            (time.perf_counter() - started) * 1000,
+        )
+        raise
+    except GuidanceUnavailable as exc:
+        logger.warning(
+            "model_call_unavailable elapsed_ms=%.1f error=%s",
+            (time.perf_counter() - started) * 1000,
+            exc.reason,
+        )
+        raise
+    except Exception as exc:
+        logger.error(
+            "model_call_exhausted elapsed_ms=%.1f error=%s",
+            (time.perf_counter() - started) * 1000,
+            type(exc).__name__,
         )
         raise
     logger.info(

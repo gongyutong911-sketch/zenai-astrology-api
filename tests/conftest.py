@@ -13,4 +13,7 @@ import database
 @pytest.fixture(autouse=True)
 def fresh_database():
     database.reset_database()
+    import fulfillment
+
+    fulfillment.reset_rate_limiter()
     yield

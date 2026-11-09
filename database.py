@@ -1,5 +1,6 @@
 """SQLite 用户档案与测算历史。"""
 
+import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -13,10 +14,12 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     create_engine,
     event,
     select,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, object_session, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -78,6 +81,14 @@ class DeepReportLocked(PermissionError):
         self.credits = credits
 
 
+class IdempotencyConflict(ValueError):
+    """同一个幂等键被用在了不同的请求内容上。"""
+
+
+class IdempotencyInProgress(RuntimeError):
+    """同一个幂等键的请求还没写完结果。"""
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -137,6 +148,30 @@ class DeepReportLedger(Base):
     credits_delta: Mapped[int] = mapped_column(Integer, nullable=False)
     balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class IdempotencyRecord(Base):
+    """履约重试的结果。只按 scope + key 复用，不把密钥写进日志。"""
+
+    __tablename__ = "idempotency_records"
+    __table_args__ = (
+        UniqueConstraint("scope", "idempotency_key", name="uq_idempotency_scope_key"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    scope: Mapped[str] = mapped_column(String(160), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    response_body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+IDEMPOTENCY_PENDING = "pending"
+IDEMPOTENCY_COMPLETED = "completed"
+IDEMPOTENCY_STALE_AFTER = timedelta(seconds=120)
 
 
 engine = None
@@ -537,6 +572,128 @@ def authorize_deep_report(
         payload["access_via"] = "credit"
         payload["one_time_credits"] = int(user.one_time_credits or 0)
         return payload
+
+
+def restore_deep_credit(
+    *,
+    user_id: Optional[int] = None,
+    user_token: Optional[str] = None,
+) -> dict:
+    """排盘已经扣次、但响应没能交给调用方时，把这一次额度退回。"""
+    with SessionLocal() as session:
+        user = _find_user(session, user_id, _clean_token(user_token))
+        if user is None:
+            raise UnknownUser("未找到对应用户")
+        user.one_time_credits = int(user.one_time_credits or 0) + 1
+        _write_deep_ledger(session, user, "refund", 1)
+        session.commit()
+        payload = _member_payload(user)
+        payload["one_time_credits"] = int(user.one_time_credits or 0)
+        return payload
+
+
+def _as_aware(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _idempotency_row(session, scope: str, idempotency_key: str) -> Optional[IdempotencyRecord]:
+    return session.scalar(
+        select(IdempotencyRecord).where(
+            IdempotencyRecord.scope == scope,
+            IdempotencyRecord.idempotency_key == idempotency_key,
+        )
+    )
+
+
+def _idempotency_replay(session, existing: IdempotencyRecord) -> Optional[dict]:
+    if not existing.response_body:
+        session.delete(existing)
+        session.commit()
+        return None
+    try:
+        body = json.loads(existing.response_body)
+    except json.JSONDecodeError:
+        session.delete(existing)
+        session.commit()
+        return None
+    if not isinstance(body, dict):
+        session.delete(existing)
+        session.commit()
+        return None
+    return {"status_code": existing.status_code or 200, "body": body}
+
+
+def _resolve_idempotency(
+    session,
+    existing: IdempotencyRecord,
+    request_hash: str,
+    now: datetime,
+) -> Optional[dict]:
+    if existing.request_hash != request_hash:
+        raise IdempotencyConflict("幂等键与请求内容不一致")
+    if existing.status == IDEMPOTENCY_COMPLETED:
+        return _idempotency_replay(session, existing)
+    age = (_as_aware(now) - _as_aware(existing.updated_at)).total_seconds()
+    if age >= IDEMPOTENCY_STALE_AFTER.total_seconds():
+        existing.status = IDEMPOTENCY_PENDING
+        existing.updated_at = now
+        existing.response_body = None
+        existing.status_code = None
+        session.commit()
+        return None
+    raise IdempotencyInProgress("相同请求正在处理")
+
+
+def claim_idempotency(*, scope: str, idempotency_key: str, request_hash: str) -> Optional[dict]:
+    """占住幂等键。返回已完成的响应；返回 None 表示调用方可以继续履约。"""
+    now = _utcnow()
+    with SessionLocal() as session:
+        existing = _idempotency_row(session, scope, idempotency_key)
+        if existing is not None:
+            return _resolve_idempotency(session, existing, request_hash, now)
+        session.add(
+            IdempotencyRecord(
+                scope=scope,
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                status=IDEMPOTENCY_PENDING,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            existing = _idempotency_row(session, scope, idempotency_key)
+            if existing is None:
+                raise
+            return _resolve_idempotency(session, existing, request_hash, now)
+        return None
+
+
+def complete_idempotency(*, scope: str, idempotency_key: str, status_code: int, body: dict) -> None:
+    with SessionLocal() as session:
+        existing = _idempotency_row(session, scope, idempotency_key)
+        if existing is None:
+            return
+        existing.status = IDEMPOTENCY_COMPLETED
+        existing.status_code = status_code
+        existing.response_body = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+        existing.updated_at = _utcnow()
+        session.commit()
+
+
+def abort_idempotency(*, scope: str, idempotency_key: str) -> None:
+    """履约失败时放开幂等键，让同一次重试可以再执行。"""
+    with SessionLocal() as session:
+        existing = _idempotency_row(session, scope, idempotency_key)
+        if existing is None or existing.status != IDEMPOTENCY_PENDING:
+            return
+        session.delete(existing)
+        session.commit()
 
 
 def apply_plan(
